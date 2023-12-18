@@ -19,6 +19,7 @@ class Saelog_Tarif {
             asal varchar(255) NOT NULL,
             tujuan varchar(255) NOT NULL,
             biaya varchar(115) NOT NULL,
+            biaya_volumetrik varchar(115) NOT NULL,
             min varchar(115) NOT NULL,
             PRIMARY KEY  (id)
         );  
@@ -35,6 +36,7 @@ class Saelog_Tarif {
 
         //ajax
         add_action( 'wp_ajax_tarifdelete', array( $this, 'ajax_delete' ) );
+        add_action( 'wp_ajax_nopriv_gotarif', array( $this, 'ajax_gotarif' ) );
         add_action( 'wp_ajax_gotarif', array( $this, 'ajax_gotarif' ) );
 
         //shortcode
@@ -54,6 +56,14 @@ class Saelog_Tarif {
             'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-truck" viewBox="0 0 16 16"> <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5zm1.294 7.456A1.999 1.999 0 0 1 4.732 11h5.536a2.01 2.01 0 0 1 .732-.732V3.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .294.456M12 10a2 2 0 0 1 1.732 1h.768a.5.5 0 0 0 .5-.5V8.35a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12zm-9 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/> </svg>'),   // Ikon untuk menu
             2   // Posisi menu dalam sidebar
         );
+        add_submenu_page(
+            'daftar-tarif-page',
+            'Pengaturan Tarif',
+            'Pengaturan Tarif',
+            'manage_options',
+            'pengaturan-tarif',
+            array( $this, 'render_admin_tarif_settings' )
+        );
     }
 
     /**
@@ -61,6 +71,9 @@ class Saelog_Tarif {
      */
     public function render_admin_page() {        
 		require_once(plugin_dir_path(__FILE__).'admin-tarif.php');
+    }
+    public function render_admin_tarif_settings() {        
+		require_once(plugin_dir_path(__FILE__).'admin-pengaturan.php');
     }
 
     public function getarif($asal,$tujuan){
@@ -115,10 +128,9 @@ class Saelog_Tarif {
         $p  = $data['panjang'];
         $l  = $data['lebar'];
         $t  = $data['tinggi'];
+        $vol = 0;
         if($p && $l && $t){
             $vol = ($p*$l*$t)/4000;
-        } else {
-            $vol = 0;
         }
 
         //MIN
@@ -127,9 +139,16 @@ class Saelog_Tarif {
         //MAX
         $max = max($vol, $berat, $min);
 
-        $biaya = $tarif->biaya?$tarif->biaya:0;
+        $biaya_v = $max == $vol ? $tarif->biaya_volumetrik : 0;
+        $biaya_b = $max == $berat ? $tarif->biaya : 0;
+
+        if($max == $vol){
+            $biaya = $biaya_v;
+        } else {
+            $biaya = $biaya_b;
+        }
         $biaya = $max*$biaya;
-        $biaya =  number_format($biaya, 0, ',', '.');
+        $biaya = number_format($biaya, 0, ',', '.');
 
         $html = '<div class="card p-3 mt-3 text-center">';
             $html .= '<div>Ongkos Kirim dari <strong>'.$asal.'</strong> ke <strong>'.$tujuan.'</strong> Berat <strong>'.$berat.'kg</strong></div>';
@@ -142,9 +161,13 @@ class Saelog_Tarif {
 
     public function sh_cektarif(){
         ob_start();
-        $kota_asal = get_option('_kota_asal',[]);
-        $kota_tuju = get_option('_kota_tuju',[]);
+        global $wpdb;
+        $table_name = $wpdb->prefix . "tarif"; 
+        $data_kota = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
+        $kota_asal = array_unique(array_column($data_kota, 'asal'));
+        $kota_tuju = array_unique(array_column($data_kota, 'tujuan'));
         $id = rand(999,9999);
+        $tarif_volume = get_option('tarif_volume');
         ?>
         <div class="cek-tarif">
             <div class="card mb-3">
@@ -178,25 +201,27 @@ class Saelog_Tarif {
                                 <label for="berat">Berat (kg)</label>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3 mb-2 mb-md-0">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" name="panjang" placeholder="Panjang">
-                                <label for="panjang">Panjang</label>
+                        <?php if($tarif_volume=='on') { ?>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" name="panjang" placeholder="Panjang">
+                                    <label for="panjang">Panjang</label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2 mb-md-0">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" name="lebar" placeholder="Lebar">
-                                <label for="lebar">Lebar</label>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" name="lebar" placeholder="Lebar">
+                                    <label for="lebar">Lebar</label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2 mb-md-0">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" name="tinggi" placeholder="Tinggi">
-                                <label for="tinggi">Tinggi</label>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" name="tinggi" placeholder="Tinggi">
+                                    <label for="tinggi">Tinggi</label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-3">
+                        <?php } ?>
+                        <div class="col-md">
                             <button class="btn btn-dark py-md-3 w-100">
                                 Cek Tarif
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
@@ -208,7 +233,7 @@ class Saelog_Tarif {
                 </div>
             </div>
             <div class="card-result-<?php echo $id;?>"></div>
-            <script>                
+            <script>
                 jQuery(function($){ 
                     $('.cek-tarif form').submit(function(event) {
                         $('.cek-tarif .card-result-<?php echo $id;?>').html('<div class="spinner-border" role="status"> <span class="visually-hidden">Loading...</span> </div>');

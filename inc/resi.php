@@ -5,14 +5,24 @@ class Saelog_Resi {
      * autoload method.
      */
     public function autoload() {
+        add_filter('default_title', array($this, 'resi_default_title'));
         add_action('init', array($this, 'register_post_type'));
         add_action( 'cmb2_admin_init', array($this, 'register_metabox'));
 
         //ajax
+        add_action( 'wp_ajax_nopriv_goresi', array( $this, 'ajax_goresi' ) );
         add_action( 'wp_ajax_goresi', array( $this, 'ajax_goresi' ) );
 
         //shortcode
         add_shortcode( 'cek-resi', array( $this, 'sh_cekresi' ) );
+    }
+
+    public function resi_default_title() {
+        global $post_type;
+        if ('data_resi' == $post_type) {
+            $title = mt_rand(100000000, 999999999);
+            return $title;
+        }
     }
 
     public function register_post_type() {
@@ -165,20 +175,15 @@ class Saelog_Resi {
             ),
         ) );
         $cmb->add_group_field( $group_field_id, array(
-            'name' => 'Tanggal',
-            'id'   => 'tanggal',
-            'type' => 'text_date',            
-        ) );
-        $cmb->add_group_field( $group_field_id, array(
-            'name' => 'Jam',
-            'id'   => 'jam',
-            'type' => 'text_time',   
-            'time_format' => 'H:i:s',         
+            'name' => 'Waktu',
+            'id'   => 'waktu',
+            'type' => 'text_datetime_timestamp',
+            'time_format' => 'H:i',
         ) );
         $cmb->add_group_field( $group_field_id, array(
             'name' => 'Keterangan',
             'id'   => 'keterangan',
-            'type' => 'textarea',            
+            'type' => 'textarea_small',            
         ) );
     }
 
@@ -255,11 +260,13 @@ class Saelog_Resi {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-record-circle text-success" viewBox="0 0 16 16"> <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/> <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/> </svg>
                             </div>
                             <div>
-                                <div>
-                                    <small class="opacity-75">
-                                    <?php echo $st['tanggal']; ?> | 
-                                    <?php echo $st['jam']; ?></small>
-                                </div>
+                                <?php if($st['waktu']){ ?>
+                                    <div>
+                                        <small class="opacity-75">
+                                            <?php echo date('Y/m/d H:i', $st['waktu']); ?>
+                                        </small>
+                                    </div>
+                                <?php } ?>
                                 <div>
                                     <?php echo $st['keterangan']; ?>
                                 </div>

@@ -4,6 +4,7 @@ $table_name = $wpdb->prefix . "tarif";
 $asal   = isset($_POST['asal']) ? $_POST['asal'] : '';
 $tujuan = isset($_POST['tujuan']) ? $_POST['tujuan'] : '';
 $biaya  = isset($_POST['biaya']) ? $_POST['biaya'] : '';
+$biaya_volumetrik  = isset($_POST['biaya_volumetrik']) ? $_POST['biaya_volumetrik'] : '';
 $min    = isset($_POST['min']) ? $_POST['min'] : '';
 
 if($asal && $tujuan && $biaya) {
@@ -15,6 +16,7 @@ if($asal && $tujuan && $biaya) {
                 'asal'      => $asal,
                 'tujuan'    => $tujuan,
                 'biaya'     => $biaya,
+                'biaya_volumetrik' => $biaya_volumetrik,
                 'min'       => $min,
             )
         );
@@ -25,6 +27,7 @@ if($asal && $tujuan && $biaya) {
                 'asal'      => $asal,
                 'tujuan'    => $tujuan,
                 'biaya'     => $biaya,
+                'biaya_volumetrik' => $biaya_volumetrik,
                 'min'       => $min,
             ),
             array( 'id'  => $_POST['id'],)
@@ -32,20 +35,8 @@ if($asal && $tujuan && $biaya) {
         echo '<div class="alert alert-info">Data berhasil di perbarui</div>';
     }   
     echo '</div>';
-
-    //save city to cache
-    $city_asal = get_option('_kota_asal',[]);
-    if(!in_array($asal, $city_asal)){        
-        array_push($city_asal, $asal);
-        update_option('_kota_asal',$city_asal);
-    }
-    $city_tuju = get_option('_kota_tuju',[]);
-    if(!in_array($tujuan, $city_tuju)){        
-        array_push($city_tuju, $tujuan);
-        update_option('_kota_tuju',$city_tuju);
-    }
-
 }
+
 
 ///ambil data
 $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
@@ -80,6 +71,10 @@ $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                             <label for="biaya">Biaya / kg</label> 
                         </div>
                         <div class="form-floating mb-3">  
+                            <input required name="biaya_volumetrik" class="form-control" type="number">
+                            <label for="biaya_volumetrik">Biaya Volumetrik / kubik</label> 
+                        </div>
+                        <div class="form-floating mb-3">  
                             <input required name="min" class="form-control" type="number">
                             <label for="min">Minimal Order (kg)</label> 
                         </div>
@@ -96,17 +91,18 @@ $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
             </div>
 
             <div class="col-md-8">
-                <div class="border mt-1 p-2 p-md-3 rounded"> 
+                <div class="border mt-1 p-2 p-md-3 rounded">
                     <table class="table table-striped">
-                        <thead class="thead-light"> 
-                            <tr><th>Asal</th><th>Tujuan</th><th>Biaya (/kg)</th><th>Min</th><th></th></tr> 
+                        <thead class="thead-light">
+                            <tr><th>Asal</th><th>Tujuan</th><th>Biaya (/kg)</th><th>Biaya Volumetrik</th><th>Min</th><th></th></tr> 
                         </thead>
-                        <tbody>                     
-                        <?php foreach($details as $detail):?>                            
+                        <tbody>
+                        <?php foreach($details as $detail):?>
                             <tr class="tr-<?php echo $detail->id;?>" data-tarif='<?php echo json_encode($detail);?>'>
                                 <td><?php echo $detail->asal;?></td>
                                 <td><?php echo $detail->tujuan;?></td>
                                 <td><?php echo $detail->biaya;?></td>
+                                <td><?php echo $detail->biaya_volumetrik;?></td>
                                 <td><?php echo $detail->min;?></td>
                                 <td>
                                     <button data-id="<?php echo $detail->id;?>" class="btn-delete link-danger bg-transparent border-0" >
@@ -122,7 +118,7 @@ $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                     </table> 
                 </div>
             </div>
-        </div>                                
+        </div>
 
     </div>
 
@@ -183,6 +179,7 @@ $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                 $('.form-tarif').find('.card-header').html('Tambah Data').removeClass('bg-info');
                 $('.form-tarif').find('.selectcity').val('');
                 $('.form-tarif').find('input[name="biaya"]').val('');
+                $('.form-tarif').find('input[name="biaya_volumetrik"]').val('');
                 $('.form-tarif').find('input[name="id"]').val('');
                 $('.form-tarif').find('input[name="min"]').val('');
                 $('.form-tarif').find('input[name="act"]').val('add');
@@ -192,6 +189,7 @@ $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                 $('.form-tarif').find('.selectcity[name="asal"]').val(data.asal);
                 $('.form-tarif').find('.selectcity[name="tujuan"]').val(data.tujuan);
                 $('.form-tarif').find('input[name="biaya"]').val(data.biaya);
+                $('.form-tarif').find('input[name="biaya_volumetrik"]').val(data.biaya_volumetrik);
                 $('.form-tarif').find('input[name="min"]').val(data.min);
                 $('.form-tarif').find('input[name="id"]').val(data.id);
                 $('.form-tarif').find('input[name="act"]').val('edit');

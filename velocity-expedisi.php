@@ -35,7 +35,7 @@ if( ! function_exists( 'vdc_enqueue_script_style') ) {
  */
 function vdc_admin_scripts($hook) {
     $page = isset($_GET['page']) ? $_GET['page'] : '';    
-    if ($page == 'daftar-tarif-page') {
+    if ($page == 'daftar-tarif-page' || $page == 'pengaturan-tarif') {
         
         if (file_exists(get_template_directory() . '/js/theme.min.js')) {            
             $the_theme     	= wp_get_theme();
@@ -49,15 +49,6 @@ function vdc_admin_scripts($hook) {
     
 }
 add_action( 'admin_enqueue_scripts', 'vdc_admin_scripts' );
-
-///
-function vdc_load_module() {
-	if ( class_exists( 'FLBuilder' ) ) {
-		require_once(plugin_dir_path(__FILE__).'modul/heroslider/heroslider.php');
-		require_once(plugin_dir_path(__FILE__).'modul/carouselimage/carouselimage.php');
-	}
-}
-add_action( 'init', 'vdc_load_module' );
 
 
 //regsiter page template

@@ -26,7 +26,7 @@ foreach ($dataresi as $key => $value) {
 ///Barcode
 require 'vendor/autoload.php';
 $generator = new Picqer\Barcode\BarcodeGeneratorPNG();
-$barcode = '<img src="data:image/png;base64,' . base64_encode($generator->getBarcode('081231723897', $generator::TYPE_CODE_128)) . '">';
+$barcode = '<img src="data:image/png;base64,' . base64_encode($generator->getBarcode($resi, $generator::TYPE_CODE_128)) . '">';
 
 //start html
 $html   = '';
@@ -100,7 +100,6 @@ $html .= '
     .page {
         width: 100mm !important;
         min-height: 100mm !important;
-        border-right: 1 dashed #dddddd;
         border-bottom: 1 dashed #dddddd;
         padding: 4mm 4mm 1mm !important;
     }
@@ -132,7 +131,7 @@ $dompdf = new Dompdf($options);
 $dompdf->loadHtml($html);
 
 // (Optional) Setup the paper size and orientation
-$dompdf->setPaper('A4', 'potrait');
+$dompdf->setPaper('A6', 'potrait');
 // $dompdf->setPaper(array(0, 0, 300, 300), 'potrait');
 
 // Render the HTML as PDF

@@ -18,6 +18,7 @@ define('VELOCITY_EXPEDISI_DIR_PATH', plugin_dir_path(__FILE__));
 ///load file
 require_once(plugin_dir_path(__FILE__).'inc/tarif.php');
 require_once(plugin_dir_path(__FILE__).'inc/resi.php');
+require_once(plugin_dir_path(__FILE__).'lib/cmb2/init.php');
 
 ///register css & js
 if( ! function_exists( 'vdc_enqueue_script_style') ) {

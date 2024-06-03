@@ -292,17 +292,30 @@ class Saelog_Resi {
 
         if(empty($resi))
         return false;
+		
+		global $wpdb;
 
-        $args = array("post_type" => "data_resi", "s" => $resi);
-        $query = get_posts( $args );
+		// Query untuk mencari pos berdasarkan judul secara tepat
+		$query = $wpdb->prepare("
+			SELECT ID, post_title 
+			FROM {$wpdb->posts} 
+			WHERE post_type = 'data_resi' 
+			AND post_status = 'publish' 
+			AND post_title = %s
+		", $resi);
 
-        if(empty($query))
+		// Lakukan query
+		$results = $wpdb->get_results($query);
+
+        if(empty($results))
         return false;
-
-        foreach ($query as $qry) {
-            $this->card_resi($qry->ID);
-        }
-
+		
+		// Tampilkan hasil pencarian
+		if ($results) {
+			foreach ($results as $post) {
+				$this->card_resi($post->ID);
+			}
+		}
         wp_die();
     }
     

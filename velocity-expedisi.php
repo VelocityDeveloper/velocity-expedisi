@@ -3,7 +3,7 @@
 Plugin Name: Velocity Expedisi
 Plugin URI: https://velocitydeveloper.com/
 Description: Plugin expedisi dari Velocity Developer.
-Version: 1.1
+Version: 1.2
 Author: Velocity Developer
 Author URI: https://velocitydeveloper.com/
 License: GPL2

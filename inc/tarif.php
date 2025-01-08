@@ -150,10 +150,17 @@ class Saelog_Tarif {
         $biaya = $max*$biaya;
         $biaya = number_format($biaya, 0, ',', '.');
 
-        $html = '<div class="card p-3 mt-3 text-center">';
-            $html .= '<div>Ongkos Kirim dari <strong>'.$asal.'</strong> ke <strong>'.$tujuan.'</strong> Berat <strong>'.$berat.'kg</strong></div>';
-            $html .= '<div class="fs-3">Rp '.$biaya.'</div>';
-        $html .= '</div>';
+        if($berat < $min){
+            $html = '<div class="card p-3 mt-3 text-center">';
+                $html .= '<div>Ongkos Kirim dari <strong>'.$asal.'</strong> ke <strong>'.$tujuan.'</strong> Berat <strong>'.$berat.'kg</strong></div>';
+                $html .= '<div class="alert alert-danger" role="alert"><strong>Tidak Tersedia!</strong><br/><small>(Minimal berat '.$min.'Kg)</small></div>';
+            $html .= '</div>';
+        } else {
+            $html = '<div class="card p-3 mt-3 text-center">';
+                $html .= '<div>Ongkos Kirim dari <strong>'.$asal.'</strong> ke <strong>'.$tujuan.'</strong> Berat <strong>'.$berat.'kg</strong></div>';
+                $html .= '<div class="fs-3">Rp '.$biaya.'</div>';
+            $html .= '</div>';
+        }
 
         echo $html;
         wp_die();

@@ -68,8 +68,8 @@ $html   .= '<div style="border: 1px solid #000000;padding: 20px;">';
                 $html   .= '<div>No. Hp : '.$nohp_pengirim.'</div>';
                 $html   .= '<br>';
                 //Penerima
-                $html   .= '<div><strong>Pengirim :</strong></div>';
-                $html   .= '<div>Nama Pengirim : '.$nama_penerima.'</div>';
+                $html   .= '<div><strong>Penerima :</strong></div>';
+                $html   .= '<div>Nama Penerima : '.$nama_penerima.'</div>';
                 $html   .= '<div>No. Hp : '.$nohp_penerima.'</div>';
             $html   .= '</td>';
             $html   .= '<td>';

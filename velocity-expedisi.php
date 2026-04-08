@@ -1,0 +1,80 @@
+<?php
+/*
+Plugin Name: Velocity Expedisi
+Plugin URI: https://velocitydeveloper.com/
+Description: Plugin expedisi dari Velocity Developer.
+Version: 1.2.1
+Author: Velocity Developer
+Author URI: https://velocitydeveloper.com/
+License: GPL2
+*/
+
+if (!defined('VELOCITY_EXPEDISI_PLUGIN_URL'))
+    define('VELOCITY_EXPEDISI_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+if (!defined('VELOCITY_EXPEDISI_DIR_PATH'))
+    define('VELOCITY_EXPEDISI_DIR_PATH', plugin_dir_path(__FILE__));
+
+
+spl_autoload_register(function ($class) {
+    $prefix = 'Expedisi\\';
+    $base_dir = __DIR__ . '/src/';
+
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+
+    if (file_exists($file)) {
+        require $file;
+    }
+});
+
+// Initialize plugin
+$plugin = new \Expedisi\Core\Plugin();
+$plugin->run();
+
+///register css & js
+if (! function_exists('vd_enqueue_script_style')) {
+    function vd_enqueue_script_style()
+    {
+        wp_enqueue_script('slick', 'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js', 1);
+
+        wp_enqueue_style('slick', 'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css', 1);
+        wp_enqueue_style('slick-theme', 'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css', 1);
+    }
+    add_action('wp_enqueue_scripts', 'vd_enqueue_script_style', 20);
+}
+
+/**
+ * Create database table on plugin activation
+ */
+function vd_create_tables()
+{
+    global $wpdb;
+    $charset_collate = $wpdb->get_charset_collate();
+    $table_name = $wpdb->prefix . 'tarif';
+
+    $sql = "CREATE TABLE $table_name (
+        id int unsigned NOT NULL auto_increment,
+        asal varchar(255) NOT NULL,
+        tujuan varchar(255) NOT NULL,
+        jenis varchar(20) NOT NULL DEFAULT 'nasional',
+        biaya varchar(115) NOT NULL,
+        biaya_volumetrik varchar(115) NOT NULL,
+        `min` varchar(115) NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+}
+function vd_ensure_tables()
+{
+    vd_create_tables();
+}
+add_action('admin_init', 'vd_ensure_tables');
+register_activation_hook(__FILE__, 'vd_create_tables');

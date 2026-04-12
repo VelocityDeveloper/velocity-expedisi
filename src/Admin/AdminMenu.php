@@ -9,6 +9,31 @@ class AdminMenu
         add_action('admin_menu', [$this, 'add_main_menu'], 5);
         add_action('admin_menu', [$this, 'add_sub_menu'], 5);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
+        add_action('wp_ajax_tarifdelete', [$this, 'ajax_tarif_delete']);
+        add_action('wp_ajax_residelete', [$this, 'ajax_resi_delete']);
+    }
+
+    public function ajax_tarif_delete()
+    {
+        global $wpdb;
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        if ($id > 0) {
+            $wpdb->delete($wpdb->prefix . 'tarif', ['id' => $id]);
+            wp_send_json_success(true);
+        }
+        wp_send_json_error(false);
+    }
+
+    public function ajax_resi_delete()
+    {
+        global $wpdb;
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        if ($id > 0) {
+            $wpdb->delete($wpdb->prefix . 'resi', ['id' => $id]);
+            $wpdb->delete($wpdb->prefix . 'resi_tracking', ['resi_id' => $id]);
+            wp_send_json_success(true);
+        }
+        wp_send_json_error(false);
     }
 
     public function add_main_menu()
@@ -60,6 +85,14 @@ class AdminMenu
         if (!in_array($page, ['velocity-expedisi', 'velocity-expedisi-tarif', 'velocity-expedisi-tarif-settings', 'velocity-expedisi-resi'], true)) {
             return;
         }
+
+        wp_enqueue_style(
+            'velocity-expedisi-admin',
+            VELOCITY_EXPEDISI_PLUGIN_URL . 'assets/admin/admin.css',
+            [],
+            '1.2.1'
+        );
+
         if (!wp_style_is('bootstrap-5', 'enqueued')) {
             wp_enqueue_style(
                 'bootstrap-5',
@@ -168,6 +201,89 @@ class AdminMenu
 
     public function render_resi_page()
     {
-        echo '<div class="wrap"><h1>Resi</h1><p>Halaman Resi akan ditambahkan di sini.</p></div>';
+        global $wpdb;
+        $table_resi = $wpdb->prefix . 'resi';
+        $table_tracking = $wpdb->prefix . 'resi_tracking';
+
+        $type = isset($_GET['jenis']) ? sanitize_text_field($_GET['jenis']) : get_option('velocity_expedisi_type', 'nasional');
+        if (!in_array($type, ['nasional', 'internasional'])) {
+            $type = 'nasional';
+        }
+
+        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+        // Handle Form Submission: Simpan/Edit Resi
+        if (isset($_POST['save_resi']) && check_admin_referer('save_resi_action', 'resi_nonce')) {
+            $data = [
+                'no_resi'           => sanitize_text_field($_POST['no_resi']),
+                'jenis'             => sanitize_text_field($_POST['jenis']),
+                'nama_pengirim'     => sanitize_text_field($_POST['nama_pengirim']),
+                'hp_pengirim'       => sanitize_text_field($_POST['hp_pengirim']),
+                'kota_pengirim'     => sanitize_text_field($_POST['kota_pengirim']),
+                'negara_pengirim'   => sanitize_text_field($_POST['negara_pengirim']),
+                'nama_penerima'     => sanitize_text_field($_POST['nama_penerima']),
+                'hp_penerima'       => sanitize_text_field($_POST['hp_penerima']),
+                'kota_penerima'     => sanitize_text_field($_POST['kota_penerima']),
+                'negara_penerima'   => sanitize_text_field($_POST['negara_penerima']),
+                'nama_barang'       => sanitize_text_field($_POST['nama_barang']),
+                'jenis_barang'      => sanitize_text_field($_POST['jenis_barang']),
+                'jumlah_barang'     => sanitize_text_field($_POST['jumlah_barang']),
+                'berat_barang'      => sanitize_text_field($_POST['berat_barang']),
+                'berat_volumetrik'  => sanitize_text_field($_POST['berat_volumetrik']),
+                'jenis_packing'     => sanitize_text_field($_POST['jenis_packing']),
+            ];
+
+            if ($_POST['action_type'] === 'add') {
+                $wpdb->insert($table_resi, $data);
+                $new_id = $wpdb->insert_id;
+                echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil ditambahkan.</p></div>';
+                wp_redirect(admin_url('admin.php?page=velocity-expedisi-resi&action=edit&id=' . $new_id . '&jenis=' . $data['jenis']));
+                exit;
+            } else {
+                $wpdb->update($table_resi, $data, ['id' => $id]);
+                echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil diperbarui.</p></div>';
+            }
+        }
+
+        // Handle Form Submission: Tambah Track
+        if (isset($_POST['add_track']) && check_admin_referer('add_track_action', 'track_nonce')) {
+            $track_data = [
+                'resi_id'    => intval($_POST['resi_id']),
+                'waktu'      => sanitize_text_field($_POST['waktu']),
+                'status'     => sanitize_text_field($_POST['status']),
+                'keterangan' => sanitize_textarea_field($_POST['keterangan']),
+                'kurir'      => sanitize_text_field($_POST['kurir']),
+            ];
+            $wpdb->insert($table_tracking, $track_data);
+            echo '<div class="notice notice-success is-dismissible"><p>Status tracking berhasil ditambahkan.</p></div>';
+        }
+
+        // Handle Deletion: Resi
+        if ($action === 'delete' && $id > 0 && check_admin_referer('delete_resi_' . $id)) {
+            $wpdb->delete($table_resi, ['id' => $id]);
+            $wpdb->delete($table_tracking, ['resi_id' => $id]);
+            echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil dihapus.</p></div>';
+            wp_redirect(admin_url('admin.php?page=velocity-expedisi-resi&jenis=' . $type));
+            exit;
+        }
+
+        // Handle Deletion: Track
+        if ($action === 'delete_track' && isset($_GET['track_id']) && check_admin_referer('delete_track_' . $_GET['track_id'])) {
+            $wpdb->delete($table_tracking, ['id' => intval($_GET['track_id'])]);
+            echo '<div class="notice notice-success is-dismissible"><p>Status tracking berhasil dihapus.</p></div>';
+        }
+
+        // Routing View
+        if ($action === 'add' || $action === 'edit') {
+            $view = plugin_dir_path(__FILE__) . 'views/resi-form.php';
+        } else {
+            $resi_list = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_resi WHERE jenis = %s ORDER BY created_at DESC", $type));
+            $view = plugin_dir_path(__FILE__) . 'views/resi-page.php';
+        }
+
+        if (file_exists($view)) {
+            include $view;
+        }
     }
 }

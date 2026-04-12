@@ -56,9 +56,11 @@ function vd_create_tables()
 {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
-    $table_name = $wpdb->prefix . 'tarif';
+    $table_tarif = $wpdb->prefix . 'tarif';
+    $table_resi = $wpdb->prefix . 'resi';
+    $table_resi_tracking = $wpdb->prefix . 'resi_tracking';
 
-    $sql = "CREATE TABLE $table_name (
+    $sql = "CREATE TABLE $table_tarif (
         id int unsigned NOT NULL auto_increment,
         asal varchar(255) NOT NULL,
         tujuan varchar(255) NOT NULL,
@@ -66,6 +68,37 @@ function vd_create_tables()
         biaya varchar(115) NOT NULL,
         biaya_volumetrik varchar(115) NOT NULL,
         `min` varchar(115) NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;
+    CREATE TABLE $table_resi (
+        id bigint(20) unsigned NOT NULL auto_increment,
+        no_resi varchar(255) NOT NULL,
+        jenis varchar(50) NOT NULL,
+        nama_pengirim varchar(255) NOT NULL,
+        hp_pengirim varchar(255) NOT NULL,
+        kota_pengirim varchar(255) DEFAULT '',
+        negara_pengirim varchar(255) DEFAULT '',
+        nama_penerima varchar(255) NOT NULL,
+        hp_penerima varchar(255) NOT NULL,
+        kota_penerima varchar(255) DEFAULT '',
+        negara_penerima varchar(255) DEFAULT '',
+        nama_barang varchar(255) NOT NULL,
+        jenis_barang varchar(255) NOT NULL,
+        jumlah_barang varchar(255) NOT NULL,
+        berat_barang varchar(255) NOT NULL,
+        berat_volumetrik varchar(255) NOT NULL,
+        jenis_packing varchar(255) NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id),
+        UNIQUE KEY  no_resi (no_resi)
+    ) $charset_collate;
+    CREATE TABLE $table_resi_tracking (
+        id bigint(20) unsigned NOT NULL auto_increment,
+        resi_id bigint(20) unsigned NOT NULL,
+        waktu datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        status varchar(255) NOT NULL,
+        keterangan text NOT NULL,
+        kurir varchar(255) DEFAULT '',
         PRIMARY KEY  (id)
     ) $charset_collate;";
 

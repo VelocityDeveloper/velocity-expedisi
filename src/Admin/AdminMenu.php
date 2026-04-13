@@ -88,23 +88,14 @@ class AdminMenu
 
     public function add_sub_menu()
     {
-        add_submenu_page(
-            'velocity-expedisi',
-            'Daftar Tarif',
-            'Daftar Tarif',
-            'manage_options',
-            'velocity-expedisi-tarif',
-            [$this, 'render_tarif_page']
-        );
-
-        add_submenu_page(
-            'velocity-expedisi',
-            'Setting Tarif',
-            'Setting Tarif',
-            'manage_options',
-            'velocity-expedisi-tarif-settings',
-            [$this, 'render_tarif_settings_page']
-        );
+        // add_submenu_page(
+        //     'velocity-expedisi',
+        //     'Daftar Tarif',
+        //     'Daftar Tarif',
+        //     'manage_options',
+        //     'velocity-expedisi-tarif',
+        //     [$this, 'render_tarif_page']
+        // );
 
         add_submenu_page(
             'velocity-expedisi',
@@ -113,6 +104,15 @@ class AdminMenu
             'manage_options',
             'velocity-expedisi-resi',
             [$this, 'render_resi_page']
+        );
+
+        add_submenu_page(
+            'velocity-expedisi',
+            'Setting Expedisi',
+            'Setting Expedisi',
+            'manage_options',
+            'velocity-expedisi-tarif-settings',
+            [$this, 'render_tarif_settings_page']
         );
     }
 
@@ -183,13 +183,19 @@ class AdminMenu
     {
         if (isset($_POST['velocity_expedisi_type'])) {
             update_option('velocity_expedisi_type', sanitize_text_field($_POST['velocity_expedisi_type']));
+            update_option('velocity_expedisi_pdf_size', sanitize_text_field($_POST['velocity_expedisi_pdf_size']));
+            update_option('velocity_expedisi_volumetrik_enable', isset($_POST['velocity_expedisi_volumetrik_enable']) ? '1' : '0');
+            update_option('velocity_expedisi_volumetrik_divisor', sanitize_text_field($_POST['velocity_expedisi_volumetrik_divisor']));
             echo '<div class="notice notice-success is-dismissible"><p>Pengaturan disimpan.</p></div>';
         }
 
         $type = get_option('velocity_expedisi_type', 'nasional');
+        $pdf_size = get_option('velocity_expedisi_pdf_size', 'A4');
+        $volumetrik_enable = get_option('velocity_expedisi_volumetrik_enable', '0');
+        $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000');
         ?>
         <div class="wrap">
-            <h1>Setting Tarif</h1>
+            <h1>Setting Expedisi</h1>
             <form method="post" action="">
                 <table class="form-table">
                     <tr>
@@ -199,6 +205,34 @@ class AdminMenu
                                 <option value="nasional" <?php selected($type, 'nasional'); ?>>Nasional (Kota)</option>
                                 <option value="internasional" <?php selected($type, 'internasional'); ?>>Internasional (Negara)</option>
                             </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Ukuran Kertas PDF Resi</th>
+                        <td>
+                            <select name="velocity_expedisi_pdf_size">
+                                <option value="A4" <?php selected($pdf_size, 'A4'); ?>>A4 (Standard)</option>
+                                <option value="F4" <?php selected($pdf_size, 'F4'); ?>>F4 (Legal)</option>
+                                <option value="thermal" <?php selected($pdf_size, 'thermal'); ?>>Thermal (80mm)</option>
+                                <option value="thermal-58" <?php selected($pdf_size, 'thermal-58'); ?>>Thermal (58mm)</option>
+                            </select>
+                            <p class="description">Pilih ukuran kertas yang sesuai dengan printer Anda.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Perhitungan Volumetrik</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="velocity_expedisi_volumetrik_enable" value="1" <?php checked($volumetrik_enable, '1'); ?>>
+                                Aktifkan perhitungan volumetrik di frontend
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Pembagi Volumetrik</th>
+                        <td>
+                            <input type="number" name="velocity_expedisi_volumetrik_divisor" value="<?php echo esc_attr($volumetrik_divisor); ?>" class="small-text">
+                            <p class="description">Default: 4000 atau 6000 (Panjang x Lebar x Tinggi / Pembagi).</p>
                         </td>
                     </tr>
                 </table>

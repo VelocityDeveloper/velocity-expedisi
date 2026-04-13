@@ -1,0 +1,14 @@
+{
+    "name": "velocity/velocity-expedisi",
+    "description": "Plugin expedisi dari Velocity Developer.",
+    "license": "GPL-2.0-only",
+    "authors": [
+        {
+            "name": "Velocity Developer",
+            "email": "info@velocitydeveloper.com"
+        }
+    ],
+    "require": {
+        "dompdf/dompdf": "^3.1"
+    }
+}

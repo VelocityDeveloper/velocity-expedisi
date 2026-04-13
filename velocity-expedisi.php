@@ -15,6 +15,10 @@ if (!defined('VELOCITY_EXPEDISI_PLUGIN_URL'))
 if (!defined('VELOCITY_EXPEDISI_DIR_PATH'))
     define('VELOCITY_EXPEDISI_DIR_PATH', plugin_dir_path(__FILE__));
 
+// Load Composer autoloader
+if (file_exists(VELOCITY_EXPEDISI_DIR_PATH . 'vendor/autoload.php')) {
+    require_once VELOCITY_EXPEDISI_DIR_PATH . 'vendor/autoload.php';
+}
 
 spl_autoload_register(function ($class) {
     $prefix = 'Expedisi\\';

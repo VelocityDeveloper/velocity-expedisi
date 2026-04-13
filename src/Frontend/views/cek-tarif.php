@@ -1,4 +1,7 @@
-<?php if (!defined('ABSPATH')) exit; ?>
+<?php if (!defined('ABSPATH')) exit; 
+$volumetrik_enable = get_option('velocity_expedisi_volumetrik_enable', '0');
+$volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000');
+?>
 
 <div x-data="cekTarif()" class="velocity-tarif-container mt-4" x-cloak>
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
@@ -40,6 +43,38 @@
                         </div>
                     </div>
                 </div>
+
+                <?php if ($volumetrik_enable === '1') : ?>
+                    <div class="mt-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" x-model="formData.useVolumetrik" id="useVolumetrik">
+                            <label class="form-check-label fw-bold" for="useVolumetrik">
+                                Hitung Volumetrik
+                            </label>
+                        </div>
+                    </div>
+
+                    <div x-show="formData.useVolumetrik" class="mt-3 p-3 bg-light rounded-3 border" x-transition>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Panjang (cm)</label>
+                                <input type="number" x-model="formData.panjang" class="form-control form-control-sm" placeholder="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Lebar (cm)</label>
+                                <input type="number" x-model="formData.lebar" class="form-control form-control-sm" placeholder="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Tinggi (cm)</label>
+                                <input type="number" x-model="formData.tinggi" class="form-control form-control-sm" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            Berat Volumetrik: <span class="fw-bold text-primary" x-text="volumetrikWeight.toFixed(2)"></span> kg
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <div class="mt-4 text-center">
                     <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm" :disabled="isLoading">
                         <span x-show="!isLoading">Cek Ongkos Kirim</span>
@@ -80,13 +115,13 @@
                                             <span class="badge bg-light text-dark border" x-text="row.tujuan"></span>
                                         </td>
                                         <td>
-                                            <div x-text="formData.berat + ' kg'"></div>
-                                            <template x-if="parseFloat(formData.berat) < parseFloat(row.min)">
+                                            <div x-text="finalWeight + ' kg'"></div>
+                                            <template x-if="parseFloat(finalWeight) < parseFloat(row.min)">
                                                 <small class="text-danger">(Dihitung min. <span x-text="row.min"></span> kg)</small>
                                             </template>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <div class="fs-5 fw-bold text-success" x-text="formatRupiah(Math.max(formData.berat, row.min) * row.biaya)"></div>
+                                            <div class="fs-5 fw-bold text-success" x-text="formatRupiah(Math.max(finalWeight, row.min) * row.biaya)"></div>
                                             <small class="text-muted" x-text="formatRupiah(row.biaya) + ' / kg'"></small>
                                         </td>
                                     </tr>
@@ -116,15 +151,32 @@
 function cekTarif() {
     return {
         type: '<?php echo $type; ?>',
+        volumetrikDivisor: <?php echo $volumetrik_divisor; ?>,
         cities: [],
         formData: {
             asal: '<?php echo esc_js($asal); ?>',
             tujuan: '<?php echo esc_js($tujuan); ?>',
-            berat: '<?php echo esc_js($berat ?: 1); ?>'
+            berat: '<?php echo esc_js($berat ?: 1); ?>',
+            useVolumetrik: false,
+            panjang: 0,
+            lebar: 0,
+            tinggi: 0
         },
         results: [],
         isLoading: false,
         hasSearched: false,
+
+        get volumetrikWeight() {
+            if (!this.formData.useVolumetrik) return 0;
+            const vol = (parseFloat(this.formData.panjang || 0) * parseFloat(this.formData.lebar || 0) * parseFloat(this.formData.tinggi || 0)) / this.volumetrikDivisor;
+            return vol || 0;
+        },
+
+        get finalWeight() {
+            const berat = parseFloat(this.formData.berat || 0);
+            const volumetrik = this.volumetrikWeight;
+            return Math.max(berat, volumetrik);
+        },
 
         init() {
             this.loadCities();

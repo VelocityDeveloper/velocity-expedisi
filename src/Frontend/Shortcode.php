@@ -1,5 +1,9 @@
 <?php
 namespace Expedisi\Frontend;
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
 class Shortcode
 {
     public function register()
@@ -12,6 +16,87 @@ class Shortcode
 
         add_action('wp_ajax_cek_resi', [$this, 'ajax_cek_resi']);
         add_action('wp_ajax_nopriv_cek_resi', [$this, 'ajax_cek_resi']);
+
+        add_action('init', [$this, 'handle_pdf_download']);
+    }
+
+    public function handle_pdf_download()
+    {
+        if (isset($_GET['download_resi_pdf']) && !empty($_GET['no_resi'])) {
+            $this->generate_resi_pdf(sanitize_text_field($_GET['no_resi']));
+        }
+    }
+
+    public function generate_resi_pdf($no_resi)
+    {
+        global $wpdb;
+        $table_resi = $wpdb->prefix . 'resi';
+        $table_tracking = $wpdb->prefix . 'resi_tracking';
+
+        $resi = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_resi WHERE no_resi = %s", $no_resi));
+        if (!$resi) {
+            wp_die('Resi tidak ditemukan.');
+        }
+
+        $tracking = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table_tracking WHERE resi_id = %d ORDER BY waktu DESC, id DESC",
+            $resi->id
+        ));
+
+        // Options for Dompdf
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'sans-serif');
+
+        $dompdf = new Dompdf($options);
+
+        // Load HTML template
+        ob_start();
+        $view = VELOCITY_EXPEDISI_DIR_PATH . 'src/Admin/views/resi-pdf.php';
+        if (file_exists($view)) {
+            include $view;
+        }
+        $html = ob_get_clean();
+
+        // Clear any previous output buffers to avoid "headers already sent"
+        if (ob_get_length()) ob_clean();
+
+        $dompdf->loadHtml($html);
+
+        // Set paper size
+        $pdf_size = get_option('velocity_expedisi_pdf_size', 'A4');
+        $is_thermal = strpos($pdf_size, 'thermal') !== false;
+
+        if ($is_thermal) {
+            $width = ($pdf_size === 'thermal') ? 215 : 155; // 80mm or 58mm
+            
+            // Calculate height dynamically based on content (with breathing room)
+            $h_header = 80;
+            $h_info = 120; // Sender & Receiver
+            $h_package = 60 + (strlen($resi->nama_barang) / 20 * 10); // Package info
+            // In thermal mode, we only show the LATEST tracking status
+            $h_tracking = (count($tracking) > 0) ? 80 : 40; 
+            $h_footer = 40;
+            
+            $estimatedHeight = $h_header + $h_info + $h_package + $h_tracking + $h_footer;
+            
+            $dompdf->setPaper([0, 0, $width, $estimatedHeight], 'portrait');
+            $dompdf->render();
+        } elseif ($pdf_size === 'F4') {
+            $dompdf->setPaper([0, 0, 609.45, 935.43], 'portrait'); // 215mm x 330mm
+            $dompdf->render();
+        } else {
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+        }
+
+        // If thermal, we want to crop the white space.
+        // Dompdf doesn't natively "crop" but we can try to 
+        // find the last Y position if we really want to be perfect.
+        
+        $dompdf->stream('Resi-' . $resi->no_resi . '.pdf', ['Attachment' => 0]);
+        exit;
     }
 
     public function ajax_cek_tarif()

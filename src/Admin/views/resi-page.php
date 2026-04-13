@@ -6,9 +6,52 @@ if (!defined('ABSPATH')) {
 <div class="wrap">
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="wp-heading-inline">Daftar Resi (<?php echo ucfirst($type); ?>)</h1>
-        <a href="<?php echo admin_url('admin.php?page=velocity-expedisi-resi&action=add&jenis=' . $type); ?>" class="page-title-action">Tambah Resi Baru</a>
+        <div>
+            <a href="<?php echo admin_url('admin-ajax.php?action=resiexport&jenis=' . $type); ?>" class="page-title-action">
+                Ekspor Resi
+            </a>
+            <button type="button" class="page-title-action" data-bs-toggle="modal" data-bs-target="#importResiModal">
+                Impor Resi (Media)
+            </button>
+            <a href="<?php echo admin_url('admin.php?page=velocity-expedisi-resi&action=add&jenis=' . $type); ?>" class="page-title-action">Tambah Resi Baru</a>
+        </div>
     </div>
     <hr class="wp-header-end">
+
+    <!-- Modal Impor Resi -->
+    <div class="modal fade" id="importResiModal" tabindex="-1" aria-labelledby="importResiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importResiModalLabel">Impor Data Resi (<?php echo ucfirst($type); ?>)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formImportResi">
+                    <div class="modal-body">
+                        <div class="mb-3 text-dark">
+                            <label class="form-label">Pilih File CSV dari Media</label>
+                            <div class="d-flex align-items-center">
+                                <input type="hidden" id="import_resi_file_id" name="import_file_id">
+                                <input type="text" class="form-control me-2" id="import_resi_file_url" readonly placeholder="Pilih file dari media...">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btnSelectMediaResi">Pilih</button>
+                            </div>
+                            <div class="form-text mt-2">
+                                <p class="mb-1">Format file harus CSV dengan urutan kolom (tanpa header):</p>
+                                <code class="d-block bg-light p-2 rounded">no_resi, nama_pengirim, hp_pengirim, kota_pengirim, negara_pengirim, nama_penerima, hp_penerima, kota_penerima, negara_penerima, nama_barang, jenis_barang, jumlah_barang, berat_barang, berat_volumetrik, jenis_packing</code>
+                                <small class="text-muted">Pastikan data sesuai dengan jenis yang dipilih (<?php echo $type; ?>).</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary btn-submit-import">
+                            Impor Sekarang
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <div class="resi mt-3 shadow-sm">
         <div class="resi-header bg-dark text-white d-flex justify-content-between align-items-center">
@@ -102,6 +145,66 @@ if (!defined('ABSPATH')) {
 
 <script>
     jQuery(function($){
+        var mediaFrame;
+        $('#btnSelectMediaResi').on('click', function(e) {
+            e.preventDefault();
+            if (mediaFrame) {
+                mediaFrame.open();
+                return;
+            }
+            mediaFrame = wp.media({
+                title: 'Pilih File CSV',
+                button: { text: 'Pilih' },
+                multiple: false,
+                library: { type: 'text/csv' }
+            });
+            mediaFrame.on('select', function() {
+                var attachment = mediaFrame.state().get('selection').first().toJSON();
+                $('#import_resi_file_id').val(attachment.id);
+                $('#import_resi_file_url').val(attachment.url);
+            });
+            mediaFrame.open();
+        });
+
+        $('#formImportResi').on('submit', function(e){
+            e.preventDefault();
+            var fileId = $('#import_resi_file_id').val();
+            if (!fileId) {
+                alert('Pilih file terlebih dahulu.');
+                return;
+            }
+
+            var $btn = $(this).find('.btn-submit-import');
+            var formData = new FormData(this);
+            formData.append('action', 'resiimport');
+            formData.append('jenis', '<?php echo $type; ?>');
+            formData.append('import_file_id', fileId);
+
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Mengimpor...');
+
+            $.ajax({
+                type: 'POST',
+                url : '<?php echo admin_url('admin-ajax.php'); ?>',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(result) {
+                    if(result.success){
+                        alert(result.data.message || 'Data resi berhasil diimpor.');
+                        location.reload();
+                    } else {
+                        alert(result.data || 'Gagal mengimpor data resi.');
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan sistem.');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).text('Impor Sekarang');
+                }
+            });
+        });
+
         $(document).on('click','.btn-delete-resi', function(){
             if (confirm("Hapus data resi ini? Semua riwayat tracking juga akan dihapus.") == true) {
                 var id = $(this).data('id');

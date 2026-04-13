@@ -11,7 +11,217 @@ class AdminMenu
         add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
         add_action('wp_ajax_tarifdelete', [$this, 'ajax_tarif_delete']);
         add_action('wp_ajax_tarifsave', [$this, 'ajax_tarif_save']);
+        add_action('wp_ajax_tarifimport', [$this, 'ajax_tarif_import']);
+        add_action('wp_ajax_tarifexport', [$this, 'ajax_tarif_export']);
         add_action('wp_ajax_residelete', [$this, 'ajax_resi_delete']);
+        add_action('wp_ajax_resiimport', [$this, 'ajax_resi_import']);
+        add_action('wp_ajax_resiexport', [$this, 'ajax_resi_export']);
+    }
+
+    public function ajax_tarif_export()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . "tarif";
+        $jenis = isset($_GET['jenis']) ? sanitize_text_field($_GET['jenis']) : 'nasional';
+        $results = $wpdb->get_results($wpdb->prepare("SELECT asal, tujuan, biaya, biaya_volumetrik, `min` FROM $table_name WHERE jenis = %s", $jenis), ARRAY_A);
+
+        $filename = "tarif-" . $jenis . "-" . date('Y-m-d') . ".csv";
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['asal', 'tujuan', 'biaya', 'biaya_volumetrik', 'min']);
+
+        if ($results) {
+            foreach ($results as $row) {
+                fputcsv($output, $row);
+            }
+        }
+        fclose($output);
+        exit;
+    }
+
+    public function ajax_resi_export()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . "resi";
+        $jenis = isset($_GET['jenis']) ? sanitize_text_field($_GET['jenis']) : 'nasional';
+        $results = $wpdb->get_results($wpdb->prepare("SELECT no_resi, nama_pengirim, hp_pengirim, kota_pengirim, negara_pengirim, nama_penerima, hp_penerima, kota_penerima, negara_penerima, nama_barang, jenis_barang, jumlah_barang, berat_barang, berat_volumetrik, jenis_packing FROM $table_name WHERE jenis = %s", $jenis), ARRAY_A);
+
+        $filename = "resi-" . $jenis . "-" . date('Y-m-d') . ".csv";
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['no_resi', 'nama_pengirim', 'hp_pengirim', 'kota_pengirim', 'negara_pengirim', 'nama_penerima', 'hp_penerima', 'kota_penerima', 'negara_penerima', 'nama_barang', 'jenis_barang', 'jumlah_barang', 'berat_barang', 'berat_volumetrik', 'jenis_packing']);
+
+        if ($results) {
+            foreach ($results as $row) {
+                fputcsv($output, $row);
+            }
+        }
+        fclose($output);
+        exit;
+    }
+
+    public function ajax_tarif_import()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $file_id = isset($_POST['import_file_id']) ? intval($_POST['import_file_id']) : 0;
+        $file = get_attached_file($file_id);
+
+        if (!$file || !file_exists($file)) {
+            wp_send_json_error('File tidak ditemukan');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . "tarif";
+        $jenis = isset($_POST['jenis']) ? sanitize_text_field($_POST['jenis']) : 'nasional';
+
+        if (($handle = fopen($file, "r")) !== FALSE) {
+            // Skip header if exists
+            $first_row = fgetcsv($handle, 1000, ",");
+            if ($first_row && $first_row[0] === 'asal') {
+                // Header, skip
+            } else {
+                // Process first row
+                if ($first_row) {
+                    $this->process_tarif_row($table_name, $jenis, $first_row);
+                }
+            }
+
+            $count = ($first_row && $first_row[0] !== 'asal') ? 1 : 0;
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                if (count($data) < 3) continue;
+                $this->process_tarif_row($table_name, $jenis, $data);
+                $count++;
+            }
+            fclose($handle);
+            wp_send_json_success(['message' => "$count data tarif berhasil diimpor"]);
+        }
+
+        wp_send_json_error('Gagal membaca file');
+    }
+
+    private function process_tarif_row($table_name, $jenis, $data)
+    {
+        global $wpdb;
+        $asal   = sanitize_text_field($data[0]);
+        $tujuan = sanitize_text_field($data[1]);
+
+        if (empty($asal) || empty($tujuan)) return;
+
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table_name WHERE asal = %s AND tujuan = %s AND jenis = %s",
+            $asal,
+            $tujuan,
+            $jenis
+        ));
+
+        $insert_data = [
+            'asal'              => $asal,
+            'tujuan'            => $tujuan,
+            'biaya'             => sanitize_text_field($data[2]),
+            'biaya_volumetrik'  => isset($data[3]) ? sanitize_text_field($data[3]) : '0',
+            'min'               => isset($data[4]) ? sanitize_text_field($data[4]) : '1',
+            'jenis'             => $jenis,
+        ];
+
+        if ($existing) {
+            $wpdb->update($table_name, $insert_data, ['id' => $existing]);
+        } else {
+            $wpdb->insert($table_name, $insert_data);
+        }
+    }
+
+    public function ajax_resi_import()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $file_id = isset($_POST['import_file_id']) ? intval($_POST['import_file_id']) : 0;
+        $file = get_attached_file($file_id);
+
+        if (!$file || !file_exists($file)) {
+            wp_send_json_error('File tidak ditemukan');
+        }
+
+        global $wpdb;
+        $table_resi = $wpdb->prefix . "resi";
+        $jenis = isset($_POST['jenis']) ? sanitize_text_field($_POST['jenis']) : 'nasional';
+
+        if (($handle = fopen($file, "r")) !== FALSE) {
+            // Skip header if needed, but the UI says without header. 
+            // Let's assume there's a header and skip it to be safe, or check first column.
+            $first_row = fgetcsv($handle, 1000, ",");
+            if ($first_row && $first_row[0] === 'no_resi') {
+                // It's a header, skip it
+            } else {
+                // Not a header, process it
+                if ($first_row) {
+                    $this->insert_resi_data($table_resi, $jenis, $first_row);
+                }
+            }
+
+            $count = ($first_row && $first_row[0] !== 'no_resi') ? 1 : 0;
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                if (count($data) < 2) continue;
+                $this->insert_resi_data($table_resi, $jenis, $data);
+                $count++;
+            }
+            fclose($handle);
+            wp_send_json_success(['message' => "$count data resi berhasil diimpor"]);
+        }
+
+        wp_send_json_error('Gagal membaca file');
+    }
+
+    private function insert_resi_data($table_name, $jenis, $data)
+    {
+        global $wpdb;
+        $no_resi = sanitize_text_field($data[0]);
+        if (empty($no_resi)) return;
+
+        $existing = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE no_resi = %s", $no_resi));
+
+        $insert_data = [
+            'no_resi'           => $no_resi,
+            'nama_pengirim'     => isset($data[1]) ? sanitize_text_field($data[1]) : '',
+            'hp_pengirim'       => isset($data[2]) ? sanitize_text_field($data[2]) : '',
+            'kota_pengirim'     => isset($data[3]) ? sanitize_text_field($data[3]) : '',
+            'negara_pengirim'   => isset($data[4]) ? sanitize_text_field($data[4]) : '',
+            'nama_penerima'     => isset($data[5]) ? sanitize_text_field($data[5]) : '',
+            'hp_penerima'       => isset($data[6]) ? sanitize_text_field($data[6]) : '',
+            'kota_penerima'     => isset($data[7]) ? sanitize_text_field($data[7]) : '',
+            'negara_penerima'   => isset($data[8]) ? sanitize_text_field($data[8]) : '',
+            'nama_barang'       => isset($data[9]) ? sanitize_text_field($data[9]) : '',
+            'jenis_barang'      => isset($data[10]) ? sanitize_text_field($data[10]) : '',
+            'jumlah_barang'     => isset($data[11]) ? sanitize_text_field($data[11]) : '',
+            'berat_barang'      => isset($data[12]) ? sanitize_text_field($data[12]) : '',
+            'berat_volumetrik'  => isset($data[13]) ? sanitize_text_field($data[13]) : '',
+            'jenis_packing'     => isset($data[14]) ? sanitize_text_field($data[14]) : '',
+            'jenis'             => $jenis,
+        ];
+
+        if ($existing) {
+            $wpdb->update($table_name, $insert_data, ['id' => $existing]);
+        } else {
+            $wpdb->insert($table_name, $insert_data);
+        }
     }
 
     public function ajax_tarif_save()
@@ -122,6 +332,8 @@ class AdminMenu
         if (!in_array($page, ['velocity-expedisi', 'velocity-expedisi-tarif', 'velocity-expedisi-tarif-settings', 'velocity-expedisi-resi'], true)) {
             return;
         }
+
+        wp_enqueue_media();
 
         wp_enqueue_style(
             'velocity-expedisi-admin',

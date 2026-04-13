@@ -1,5 +1,6 @@
 <?php 
 $site_name = get_bloginfo('name');
+$favicon_url = wp_get_attachment_image_url(get_option('site_icon'), 'full');
 $pdf_size = get_option('velocity_expedisi_pdf_size', 'A4');
 $is_thermal = strpos($pdf_size, 'thermal') !== false;
 ?>
@@ -64,6 +65,7 @@ $is_thermal = strpos($pdf_size, 'thermal') !== false;
 </head>
 <body>
     <div class="header">
+        <img src="<?php echo $favicon_url; ?>" alt="<?php echo $site_name; ?>" style="width: 50px;">
         <h1><?php echo esc_html($site_name); ?></h1>
         <p>BUKTI PENGIRIMAN (RESI)</p>
         <div class="resi-no">No. Resi: <?php echo esc_html($resi->no_resi); ?></div>

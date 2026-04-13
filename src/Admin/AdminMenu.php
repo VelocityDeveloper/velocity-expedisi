@@ -10,7 +10,44 @@ class AdminMenu
         add_action('admin_menu', [$this, 'add_sub_menu'], 5);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
         add_action('wp_ajax_tarifdelete', [$this, 'ajax_tarif_delete']);
+        add_action('wp_ajax_tarifsave', [$this, 'ajax_tarif_save']);
         add_action('wp_ajax_residelete', [$this, 'ajax_resi_delete']);
+    }
+
+    public function ajax_tarif_save()
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . "tarif";
+        $id     = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $asal   = isset($_POST['asal']) ? sanitize_text_field($_POST['asal']) : '';
+        $tujuan = isset($_POST['tujuan']) ? sanitize_text_field($_POST['tujuan']) : '';
+        $jenis  = isset($_POST['jenis']) ? sanitize_text_field($_POST['jenis']) : 'nasional';
+        $biaya  = isset($_POST['biaya']) ? sanitize_text_field($_POST['biaya']) : '';
+        $biaya_volumetrik = isset($_POST['biaya_volumetrik']) ? sanitize_text_field($_POST['biaya_volumetrik']) : '';
+        $min    = isset($_POST['min']) ? sanitize_text_field($_POST['min']) : '';
+
+        if (!$asal || !$tujuan || !$biaya) {
+            wp_send_json_error('Data tidak lengkap');
+        }
+
+        $data = [
+            'asal'      => $asal,
+            'tujuan'    => $tujuan,
+            'jenis'     => $jenis,
+            'biaya'     => $biaya,
+            'biaya_volumetrik' => $biaya_volumetrik,
+            'min'       => $min,
+        ];
+
+        if ($id > 0) {
+            $wpdb->update($table_name, $data, ['id' => $id]);
+            $data['id'] = $id;
+            wp_send_json_success($data);
+        } else {
+            $wpdb->insert($table_name, $data);
+            $data['id'] = $wpdb->insert_id;
+            wp_send_json_success($data);
+        }
     }
 
     public function ajax_tarif_delete()
@@ -110,6 +147,14 @@ class AdminMenu
                 true
             );
         }
+
+        wp_enqueue_script(
+            'alpine-js',
+            'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js',
+            [],
+            '3.x.x',
+            true
+        );
     }
 
     public function render_main_menu()
@@ -124,42 +169,6 @@ class AdminMenu
         $type = isset($_GET['jenis']) ? sanitize_text_field($_GET['jenis']) : get_option('velocity_expedisi_type', 'nasional');
         if (!in_array($type, ['nasional', 'internasional'])) {
             $type = 'nasional';
-        }
-        $asal   = isset($_POST['asal']) ? $_POST['asal'] : '';
-        $tujuan = isset($_POST['tujuan']) ? $_POST['tujuan'] : '';
-        $biaya  = isset($_POST['biaya']) ? $_POST['biaya'] : '';
-        $biaya_volumetrik  = isset($_POST['biaya_volumetrik']) ? $_POST['biaya_volumetrik'] : '';
-        $min    = isset($_POST['min']) ? $_POST['min'] : '';
-
-        if ($asal && $tujuan && $biaya) {
-            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-            echo '<div class="container py-3">';
-            if (isset($_POST['act']) && $_POST['act'] == 'add') {
-                $result_check = $wpdb->insert($table_name,
-                    array(
-                        'asal'      => $asal,
-                        'tujuan'    => $tujuan,
-                        'jenis'     => $type,
-                        'biaya'     => $biaya,
-                        'biaya_volumetrik' => $biaya_volumetrik,
-                        'min'       => $min,
-                    )
-                );
-                echo '<div class="alert alert-success">Data berhasil di tambah</div>';
-            } else if (isset($_POST['id'])) {
-                $result_check = $wpdb->update($table_name,
-                    array(
-                        'asal'      => $asal,
-                        'tujuan'    => $tujuan,
-                        'biaya'     => $biaya,
-                        'biaya_volumetrik' => $biaya_volumetrik,
-                        'min'       => $min,
-                    ),
-                    array('id'  => $_POST['id'],)
-                );
-                echo '<div class="alert alert-info">Data berhasil di perbarui</div>';
-            }
-            echo '</div>';
         }
 
         ///ambil data

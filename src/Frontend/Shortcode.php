@@ -6,6 +6,62 @@ class Shortcode
     {
         add_shortcode('cek_tarif', [$this, 'cek_tarif']);
         add_shortcode('cek_resi', [$this, 'cek_resi']);
+
+        add_action('wp_ajax_cek_tarif', [$this, 'ajax_cek_tarif']);
+        add_action('wp_ajax_nopriv_cek_tarif', [$this, 'ajax_cek_tarif']);
+
+        add_action('wp_ajax_cek_resi', [$this, 'ajax_cek_resi']);
+        add_action('wp_ajax_nopriv_cek_resi', [$this, 'ajax_cek_resi']);
+    }
+
+    public function ajax_cek_tarif()
+    {
+        global $wpdb;
+        $asal   = isset($_POST['asal']) ? sanitize_text_field($_POST['asal']) : '';
+        $tujuan = isset($_POST['tujuan']) ? sanitize_text_field($_POST['tujuan']) : '';
+        $type   = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : 'nasional';
+
+        if (!$asal || !$tujuan) {
+            wp_send_json_error('Data tidak lengkap');
+        }
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}tarif WHERE asal = %s AND tujuan = %s AND jenis = %s",
+            $asal,
+            $tujuan,
+            $type
+        ));
+
+        wp_send_json_success($results);
+    }
+
+    public function ajax_cek_resi()
+    {
+        global $wpdb;
+        $no_resi = isset($_POST['no_resi']) ? sanitize_text_field($_POST['no_resi']) : '';
+
+        if (!$no_resi) {
+            wp_send_json_error('Nomor resi tidak boleh kosong');
+        }
+
+        $resi = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}resi WHERE no_resi = %s",
+            $no_resi
+        ));
+
+        if (!$resi) {
+            wp_send_json_error('Resi tidak ditemukan');
+        }
+
+        $tracking = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}resi_tracking WHERE resi_id = %d ORDER BY waktu DESC",
+            $resi->id
+        ));
+
+        wp_send_json_success([
+            'resi' => $resi,
+            'tracking' => $tracking
+        ]);
     }
 
     public function cek_resi($atts)

@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 
-<div class="velocity-tarif-container mt-4">
+<div x-data="cekTarif()" class="velocity-tarif-container mt-4" x-cloak>
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-header bg-primary text-white py-3 px-4">
             <h5 class="mb-0 d-flex align-items-center">
@@ -12,117 +12,132 @@
             </h5>
         </div>
         <div class="card-body p-4">
-            <form action="" method="get">
+            <form @submit.prevent="submitCek">
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label for="asal" class="form-label fw-bold">Asal</label>
-                        <input list="list_asal" name="asal" id="asal" class="form-control" placeholder="Ketik Kota Asal..." value="<?php echo esc_attr($asal); ?>" required autocomplete="off">
-                        <datalist id="list_asal" class="listcity"></datalist>
+                        <input list="list_asal" x-model="formData.asal" id="asal" class="form-control" placeholder="Ketik Kota Asal..." required autocomplete="off">
+                        <datalist id="list_asal">
+                            <template x-for="city in cities" :key="city">
+                                <option :value="city"></option>
+                            </template>
+                        </datalist>
                     </div>
                     <div class="col-md-4">
                         <label for="tujuan" class="form-label fw-bold">Tujuan</label>
-                        <input list="list_tujuan" name="tujuan" id="tujuan" class="form-control" placeholder="Ketik Kota Tujuan..." value="<?php echo esc_attr($tujuan); ?>" required autocomplete="off">
-                        <datalist id="list_tujuan" class="listcity"></datalist>
+                        <input list="list_tujuan" x-model="formData.tujuan" id="tujuan" class="form-control" placeholder="Ketik Kota Tujuan..." required autocomplete="off">
+                        <datalist id="list_tujuan">
+                            <template x-for="city in cities" :key="city">
+                                <option :value="city"></option>
+                            </template>
+                        </datalist>
                     </div>
                     <div class="col-md-4">
                         <label for="berat" class="form-label fw-bold">Berat (kg)</label>
                         <div class="input-group">
-                            <input type="number" step="0.1" name="berat" id="berat" class="form-control" placeholder="1" value="<?php echo esc_attr($berat ?: 1); ?>" min="0.1" required>
+                            <input type="number" step="0.1" x-model="formData.berat" id="berat" class="form-control" placeholder="1" min="0.1" required>
                             <span class="input-group-text">kg</span>
                         </div>
                     </div>
                 </div>
                 <div class="mt-4 text-center">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm">
-                        Cek Ongkos Kirim
+                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm" :disabled="isLoading">
+                        <span x-show="!isLoading">Cek Ongkos Kirim</span>
+                        <span x-show="isLoading" class="spinner-border spinner-border-sm"></span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <?php if ($asal && $tujuan): ?>
-        <div class="mt-4">
-            <?php if ($tarif_result): ?>
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div class="card-header bg-success text-white py-3">
-                        <h6 class="mb-0">Hasil Estimasi Tarif</h6>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
+    <div class="mt-4" x-show="hasSearched">
+        <template x-if="results.length > 0">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-success text-white py-3">
+                    <h6 class="mb-0">Hasil Estimasi Tarif</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Layanan</th>
+                                    <th>Rute</th>
+                                    <th>Berat</th>
+                                    <th class="text-end pe-4">Total Biaya</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="row in results" :key="row.id">
                                     <tr>
-                                        <th class="ps-4">Layanan</th>
-                                        <th>Rute</th>
-                                        <th>Berat</th>
-                                        <th class="text-end pe-4">Total Biaya</th>
+                                        <td class="ps-4">
+                                            <div class="fw-bold text-primary" x-text="row.jenis.charAt(0).toUpperCase() + row.jenis.slice(1) + ' Service'"></div>
+                                            <small class="text-muted">Min. Order: <span x-text="row.min"></span> kg</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border" x-text="row.asal"></span>
+                                            <span class="mx-1 text-muted">→</span>
+                                            <span class="badge bg-light text-dark border" x-text="row.tujuan"></span>
+                                        </td>
+                                        <td>
+                                            <div x-text="formData.berat + ' kg'"></div>
+                                            <template x-if="parseFloat(formData.berat) < parseFloat(row.min)">
+                                                <small class="text-danger">(Dihitung min. <span x-text="row.min"></span> kg)</small>
+                                            </template>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="fs-5 fw-bold text-success" x-text="formatRupiah(Math.max(formData.berat, row.min) * row.biaya)"></div>
+                                            <small class="text-muted" x-text="formatRupiah(row.biaya) + ' / kg'"></small>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($tarif_result as $row): ?>
-                                        <?php 
-                                        $final_weight = max($berat, (float)$row->min);
-                                        $total_cost = $final_weight * (float)$row->biaya;
-                                        ?>
-                                        <tr>
-                                            <td class="ps-4">
-                                                <div class="fw-bold text-primary"><?php echo ucfirst($row->jenis); ?> Service</div>
-                                                <small class="text-muted">Min. Order: <?php echo $row->min; ?> kg</small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-light text-dark border"><?php echo esc_html($row->asal); ?></span>
-                                                <span class="mx-1 text-muted">→</span>
-                                                <span class="badge bg-light text-dark border"><?php echo esc_html($row->tujuan); ?></span>
-                                            </td>
-                                            <td>
-                                                <div><?php echo number_format($berat, 1); ?> kg</div>
-                                                <?php if ($berat < (float)$row->min): ?>
-                                                    <small class="text-danger">(Dihitung min. <?php echo $row->min; ?> kg)</small>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="text-end pe-4">
-                                                <div class="fs-5 fw-bold text-success">Rp <?php echo number_format($total_cost, 0, ',', '.'); ?></div>
-                                                <small class="text-muted">Rp <?php echo number_format((float)$row->biaya, 0, ',', '.'); ?> / kg</small>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            <?php else: ?>
-                <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 d-flex align-items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle me-3" viewBox="0 0 16 16">
-                        <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
-                        <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
-                    </svg>
-                    <div>
-                        Maaf, tarif untuk rute <strong><?php echo esc_html($asal); ?></strong> ke <strong><?php echo esc_html($tujuan); ?></strong> belum tersedia. Silakan hubungi admin untuk informasi lebih lanjut.
-                    </div>
+            </div>
+        </template>
+        
+        <template x-if="results.length === 0">
+            <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle me-3" viewBox="0 0 16 16">
+                    <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                    <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                </svg>
+                <div>
+                    Maaf, tarif untuk rute <strong x-text="formData.asal"></strong> ke <strong x-text="formData.tujuan"></strong> belum tersedia. Silakan hubungi admin untuk informasi lebih lanjut.
                 </div>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+            </div>
+        </template>
+    </div>
 </div>
 
 <script>
-    jQuery(function($){
-        var expedisi_type = '<?php echo $type; ?>';
-        var storage_key = "data_expedisi_" + expedisi_type;
-        var json_file = expedisi_type == 'internasional' ? 'countries.json' : 'city.json';
+function cekTarif() {
+    return {
+        type: '<?php echo $type; ?>',
+        cities: [],
+        formData: {
+            asal: '<?php echo esc_js($asal); ?>',
+            tujuan: '<?php echo esc_js($tujuan); ?>',
+            berat: '<?php echo esc_js($berat ?: 1); ?>'
+        },
+        results: [],
+        isLoading: false,
+        hasSearched: false,
 
-        function loadcity(){
-            return jQuery.ajax({
-                url : '<?php echo VELOCITY_EXPEDISI_PLUGIN_URL; ?>src/Core/' + json_file,
-                success:function(dataarray) {
-                    localStorage.setItem(storage_key, JSON.stringify(dataarray));
-                },
-            });
-        }
-        function populateCityList(){
-            var datacity = localStorage.getItem(storage_key);
+        init() {
+            this.loadCities();
+            if (this.formData.asal && this.formData.tujuan) {
+                this.submitCek();
+            }
+        },
+
+        async loadCities() {
+            const storageKey = "data_expedisi_" + this.type;
+            const jsonFile = this.type === 'internasional' ? 'countries.json' : 'city.json';
+            let datacity = localStorage.getItem(storageKey);
+            
             try {
                 datacity = datacity ? JSON.parse(datacity) : null;
             } catch (e) {
@@ -130,31 +145,70 @@
             }
 
             if (!Array.isArray(datacity)) {
-                loadcity().then(function(data) {
-                    renderOptions(data);
-                });
-            } else { 
-                renderOptions(datacity); 
-            }
-        }
-
-        function renderOptions(datacity) {
-            if (!Array.isArray(datacity)) return;
-            var options = '';
-            datacity.forEach(item => {
-                var ct = expedisi_type == 'internasional' ? item.country : item.city_name;
-                if(expedisi_type == 'nasional' && item.type=='Kota'){
-                    ct += ' '+item.type;
+                try {
+                    const response = await fetch('<?php echo VELOCITY_EXPEDISI_PLUGIN_URL; ?>src/Core/' + jsonFile);
+                    datacity = await response.json();
+                    localStorage.setItem(storageKey, JSON.stringify(datacity));
+                } catch (error) {
+                    console.error('Failed to load cities:', error);
+                    return;
                 }
-                options += '<option value="'+ct+'">';
+            }
+
+            this.cities = datacity.map(item => {
+                let ct = this.type === 'internasional' ? item.country : item.city_name;
+                if (this.type === 'nasional' && item.type === 'Kota') {
+                    ct += ' ' + item.type;
+                }
+                return ct;
             });
-            $('.listcity').html(options);
+        },
+
+        async submitCek() {
+            if (!this.formData.asal || !this.formData.tujuan) return;
+            
+            this.isLoading = true;
+            this.hasSearched = false;
+
+            const formData = new FormData();
+            formData.append('action', 'cek_tarif');
+            formData.append('asal', this.formData.asal);
+            formData.append('tujuan', this.formData.tujuan);
+            formData.append('type', this.type);
+
+            try {
+                const response = await fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    this.results = result.data;
+                } else {
+                    this.results = [];
+                }
+            } catch (error) {
+                console.error('Error fetching tarif:', error);
+                this.results = [];
+            } finally {
+                this.isLoading = false;
+                this.hasSearched = true;
+            }
+        },
+
+        formatRupiah(number) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(number);
         }
-        populateCityList();
-    });
+    }
+}
 </script>
 
 <style>
+    [x-cloak] { display: none !important; }
     .velocity-tarif-container .card {
         border-radius: 1rem;
     }

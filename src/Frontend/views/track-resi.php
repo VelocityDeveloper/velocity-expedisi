@@ -1,32 +1,35 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 
-<div class="velocity-tracking-container">
+<div x-data="trackResi()" class="velocity-tracking-container" x-cloak>
     <div class="tracking-form mb-4">
-        <form action="" method="get">
+        <form @submit.prevent="submitTrack">
             <div class="input-group">
-                <input type="text" name="no_resi" class="form-control" placeholder="Masukkan Nomor Resi" value="<?php echo esc_attr($no_resi); ?>" required>
-                <button class="btn btn-primary" type="submit">Lacak Resi</button>
+                <input type="text" x-model="no_resi" class="form-control" placeholder="Masukkan Nomor Resi" required>
+                <button class="btn btn-primary" type="submit" :disabled="isLoading">
+                    <span x-show="!isLoading">Lacak Resi</span>
+                    <span x-show="isLoading" class="spinner-border spinner-border-sm"></span>
+                </button>
             </div>
         </form>
     </div>
 
-    <?php if ($no_resi): ?>
-        <?php if ($resi): ?>
-            <div class="tracking-result card">
+    <div x-show="hasSearched">
+        <template x-if="resi">
+            <div class="tracking-result card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Hasil Pelacakan: <?php echo esc_html($resi->no_resi); ?></h5>
+                    <h5 class="mb-0">Hasil Pelacakan: <span x-text="resi.no_resi"></span></h5>
                 </div>
                 <div class="card-body">
                     <div class="row info-pengiriman">
                         <div class="col-md-6 mb-3">
                             <h6 class="text-muted border-bottom pb-2">Informasi Pengirim</h6>
-                            <p class="mb-1"><strong>Nama:</strong> <?php echo esc_html($resi->nama_pengirim); ?></p>
-                            <p class="mb-1"><strong>Kota:</strong> <?php echo esc_html($resi->kota_pengirim ?: '-'); ?></p>
+                            <p class="mb-1"><strong>Nama:</strong> <span x-text="resi.nama_pengirim"></span></p>
+                            <p class="mb-1"><strong>Kota:</strong> <span x-text="resi.kota_pengirim || '-'"></span></p>
                         </div>
                         <div class="col-md-6 mb-3">
                             <h6 class="text-muted border-bottom pb-2">Informasi Penerima</h6>
-                            <p class="mb-1"><strong>Nama:</strong> <?php echo esc_html($resi->nama_penerima); ?></p>
-                            <p class="mb-1"><strong>Kota:</strong> <?php echo esc_html($resi->kota_penerima ?: '-'); ?></p>
+                            <p class="mb-1"><strong>Nama:</strong> <span x-text="resi.nama_penerima"></span></p>
+                            <p class="mb-1"><strong>Kota:</strong> <span x-text="resi.kota_penerima || '-'"></span></p>
                         </div>
                     </div>
 
@@ -35,13 +38,13 @@
                             <h6 class="text-muted border-bottom pb-2">Informasi Paket</h6>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>Nama Barang:</strong> <?php echo esc_html($resi->nama_barang); ?></p>
+                                    <p class="mb-1"><strong>Nama Barang:</strong> <span x-text="resi.nama_barang"></span></p>
                                 </div>
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>Jenis Barang:</strong> <?php echo esc_html($resi->jenis_barang); ?></p>
+                                    <p class="mb-1"><strong>Jenis Barang:</strong> <span x-text="resi.jenis_barang"></span></p>
                                 </div>
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>Berat:</strong> <?php echo esc_html($resi->berat_barang); ?> kg</p>
+                                    <p class="mb-1"><strong>Berat:</strong> <span x-text="resi.berat_barang"></span> kg</p>
                                 </div>
                             </div>
                         </div>
@@ -49,37 +52,102 @@
 
                     <div class="tracking-timeline mt-4">
                         <h6 class="text-muted border-bottom pb-2 mb-3">Riwayat Status</h6>
-                        <?php if ($tracking): ?>
+                        <template x-if="tracking.length > 0">
                             <div class="timeline-items">
-                                <?php foreach ($tracking as $step): ?>
+                                <template x-for="step in tracking" :key="step.id">
                                     <div class="timeline-item d-flex mb-3">
                                         <div class="timeline-date me-3 text-end" style="min-width: 120px;">
-                                            <div class="fw-bold"><?php echo date('d M Y', strtotime($step->waktu)); ?></div>
-                                            <small class="text-muted"><?php echo date('H:i', strtotime($step->waktu)); ?></small>
+                                            <div class="fw-bold" x-text="formatDate(step.waktu)"></div>
+                                            <small class="text-muted" x-text="formatTime(step.waktu)"></small>
                                         </div>
                                         <div class="timeline-content ps-3 border-start position-relative">
-                                            <div class="timeline-dot position-absolute" style="left: -5px; top: 5px; width: 10px; height: 10px; background: #007bff; border-radius: 50%;"></div>
-                                            <div class="fw-bold text-primary"><?php echo esc_html($step->status); ?></div>
-                                            <div class="text-muted small"><?php echo esc_html($step->keterangan); ?></div>
+                                            <div class="timeline-dot position-absolute" style="left: -6px; top: 6px; width: 11px; height: 11px; background: #0d6efd; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px #0d6efd;"></div>
+                                            <div class="fw-bold text-primary" x-text="step.status"></div>
+                                            <div class="text-muted small" x-text="step.keterangan"></div>
                                         </div>
                                     </div>
-                                <?php endforeach; ?>
+                                </template>
                             </div>
-                        <?php else: ?>
+                        </template>
+                        <template x-if="tracking.length === 0">
                             <div class="alert alert-info">Belum ada riwayat pelacakan.</div>
-                        <?php endif; ?>
+                        </template>
                     </div>
                 </div>
             </div>
-        <?php else: ?>
+        </template>
+        
+        <template x-if="!resi && !isLoading">
             <div class="alert alert-danger">
-                Maaf, nomor resi <strong><?php echo esc_html($no_resi); ?></strong> tidak ditemukan. Silakan periksa kembali nomor resi Anda.
+                Maaf, nomor resi <strong x-text="no_resi"></strong> tidak ditemukan. Silakan periksa kembali nomor resi Anda.
             </div>
-        <?php endif; ?>
-    <?php endif; ?>
+        </template>
+    </div>
 </div>
 
+<script>
+function trackResi() {
+    return {
+        no_resi: '<?php echo esc_js($no_resi); ?>',
+        resi: null,
+        tracking: [],
+        isLoading: false,
+        hasSearched: false,
+
+        init() {
+            if (this.no_resi) {
+                this.submitTrack();
+            }
+        },
+
+        async submitTrack() {
+            if (!this.no_resi) return;
+            
+            this.isLoading = true;
+            this.hasSearched = false;
+
+            const formData = new FormData();
+            formData.append('action', 'cek_resi');
+            formData.append('no_resi', this.no_resi);
+
+            try {
+                const response = await fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    this.resi = result.data.resi;
+                    this.tracking = result.data.tracking;
+                } else {
+                    this.resi = null;
+                    this.tracking = [];
+                }
+            } catch (error) {
+                console.error('Error tracking resi:', error);
+                this.resi = null;
+                this.tracking = [];
+            } finally {
+                this.isLoading = false;
+                this.hasSearched = true;
+            }
+        },
+
+        formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+
+        formatTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
+    }
+}
+</script>
+
 <style>
+    [x-cloak] { display: none !important; }
     .velocity-tracking-container .timeline-item {
         position: relative;
     }
@@ -102,16 +170,6 @@
     }
     .velocity-tracking-container .card-body {
         padding: 1.5rem;
-    }
-    .velocity-tracking-container .timeline-dot {
-        left: -6px;
-        top: 6px;
-        width: 11px;
-        height: 11px;
-        background: #0d6efd;
-        border-radius: 50%;
-        border: 2px solid #fff;
-        box-shadow: 0 0 0 2px #0d6efd;
     }
     .velocity-tracking-container .info-pengiriman h6,
     .velocity-tracking-container .info-barang h6,

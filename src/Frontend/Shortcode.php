@@ -8,8 +8,8 @@ class Shortcode
 {
     public function register()
     {
-        add_shortcode('cek_tarif', [$this, 'cek_tarif']);
-        add_shortcode('cek_resi', [$this, 'cek_resi']);
+        add_shortcode('cek-tarif', [$this, 'cek_tarif']);
+        add_shortcode('cek-resi', [$this, 'cek_resi']);
 
         add_action('wp_ajax_cek_tarif', [$this, 'ajax_cek_tarif']);
         add_action('wp_ajax_nopriv_cek_tarif', [$this, 'ajax_cek_tarif']);

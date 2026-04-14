@@ -92,18 +92,10 @@ class AdminMenu
         $jenis = isset($_POST['jenis']) ? sanitize_text_field($_POST['jenis']) : 'nasional';
 
         if (($handle = fopen($file, "r")) !== FALSE) {
-            // Skip header if exists
-            $first_row = fgetcsv($handle, 1000, ",");
-            if ($first_row && $first_row[0] === 'asal') {
-                // Header, skip
-            } else {
-                // Process first row
-                if ($first_row) {
-                    $this->process_tarif_row($table_name, $jenis, $first_row);
-                }
-            }
+            // Pastikan baris pertama (header) selalu dilewati
+            fgetcsv($handle, 1000, ",");
 
-            $count = ($first_row && $first_row[0] !== 'asal') ? 1 : 0;
+            $count = 0;
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                 if (count($data) < 3) continue;
                 $this->process_tarif_row($table_name, $jenis, $data);

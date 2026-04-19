@@ -14,11 +14,36 @@ class Shortcode
         add_action('wp_ajax_cek_tarif', [$this, 'ajax_cek_tarif']);
         add_action('wp_ajax_nopriv_cek_tarif', [$this, 'ajax_cek_tarif']);
 
+        add_action('wp_ajax_get_origins', [$this, 'ajax_get_origins']);
+        add_action('wp_ajax_nopriv_get_origins', [$this, 'ajax_get_origins']);
+
+        add_action('wp_ajax_get_destinations', [$this, 'ajax_get_destinations']);
+        add_action('wp_ajax_nopriv_get_destinations', [$this, 'ajax_get_destinations']);
+
         add_action('wp_ajax_cek_resi', [$this, 'ajax_cek_resi']);
         add_action('wp_ajax_nopriv_cek_resi', [$this, 'ajax_cek_resi']);
 
         add_action('init', [$this, 'handle_pdf_download']);
         add_action('wp_head', [$this, 'render_custom_styles']);
+    }
+
+    private function enqueue_assets()
+    {
+        // Enqueue Select2
+        if (!wp_style_is('select2', 'enqueued')) {
+            wp_enqueue_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', [], '4.1.0');
+            wp_enqueue_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['jquery'], '4.1.0', true);
+        }
+
+        // Enqueue Bootstrap for styling if not already present
+        if (!wp_style_is('bootstrap-5', 'enqueued')) {
+            wp_enqueue_style(
+                'bootstrap-5',
+                'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+                [],
+                '5.3.3'
+            );
+        }
     }
 
     public function render_custom_styles()
@@ -65,6 +90,25 @@ class Shortcode
             .velocity-tarif-container .card-header h6,
             .velocity-tracking-container .card-header h6 {
                 color: var(--ve-header-text-color) !important;
+            }
+            /* Select2 mobile adjustments */
+            @media (max-width: 768px) {
+                .select2-container--default .select2-selection--single {
+                    height: 38px !important;
+                    display: flex;
+                    align-items: center;
+                }
+                .select2-container--default .select2-selection--single .select2-selection__rendered {
+                    font-size: 14px !important;
+                    line-height: 1.5 !important;
+                }
+                .select2-container--default .select2-selection--single .select2-selection__arrow {
+                    height: 36px !important;
+                }
+                .select2-results__option {
+                    font-size: 14px !important;
+                    padding: 8px 12px !important;
+                }
             }
         </style>
         ";
@@ -149,6 +193,46 @@ class Shortcode
         exit;
     }
 
+    public function ajax_get_origins()
+    {
+        global $wpdb;
+        $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : 'nasional';
+        $destination = isset($_POST['destination']) ? sanitize_text_field($_POST['destination']) : '';
+
+        $query = "SELECT DISTINCT asal FROM {$wpdb->prefix}tarif WHERE jenis = %s";
+        $params = [$type];
+
+        if ($destination) {
+            $query .= " AND tujuan = %s";
+            $params[] = $destination;
+        }
+
+        $query .= " ORDER BY asal ASC";
+        $results = $wpdb->get_col($wpdb->prepare($query, ...$params));
+
+        wp_send_json_success($results);
+    }
+
+    public function ajax_get_destinations()
+    {
+        global $wpdb;
+        $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : 'nasional';
+        $origin = isset($_POST['origin']) ? sanitize_text_field($_POST['origin']) : '';
+
+        $query = "SELECT DISTINCT tujuan FROM {$wpdb->prefix}tarif WHERE jenis = %s";
+        $params = [$type];
+
+        if ($origin) {
+            $query .= " AND asal = %s";
+            $params[] = $origin;
+        }
+
+        $query .= " ORDER BY tujuan ASC";
+        $results = $wpdb->get_col($wpdb->prepare($query, ...$params));
+
+        wp_send_json_success($results);
+    }
+
     public function ajax_cek_tarif()
     {
         global $wpdb;
@@ -203,15 +287,7 @@ class Shortcode
     {
         global $wpdb;
 
-        // Enqueue Bootstrap for styling if not already present
-        if (!wp_style_is('bootstrap-5', 'enqueued')) {
-            wp_enqueue_style(
-                'bootstrap-5',
-                'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-                [],
-                '5.3.3'
-            );
-        }
+        $this->enqueue_assets();
 
         $no_resi = isset($_GET['no_resi']) ? sanitize_text_field($_GET['no_resi']) : '';
         $resi = null;
@@ -240,21 +316,13 @@ class Shortcode
     {
         global $wpdb;
 
+        $this->enqueue_assets();
+
         $atts = shortcode_atts([
             'type' => get_option('velocity_expedisi_type', 'nasional'),
         ], $atts);
 
         $type = $atts['type'];
-
-        // Enqueue Bootstrap for styling if not already present
-        if (!wp_style_is('bootstrap-5', 'enqueued')) {
-            wp_enqueue_style(
-                'bootstrap-5',
-                'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-                [],
-                '5.3.3'
-            );
-        }
 
         $asal   = isset($_GET['asal']) ? sanitize_text_field($_GET['asal']) : '';
         $tujuan = isset($_GET['tujuan']) ? sanitize_text_field($_GET['tujuan']) : '';

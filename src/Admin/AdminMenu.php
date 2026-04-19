@@ -494,56 +494,129 @@ class AdminMenu
             update_option('velocity_expedisi_pdf_size', sanitize_text_field($_POST['velocity_expedisi_pdf_size']));
             update_option('velocity_expedisi_volumetrik_enable', isset($_POST['velocity_expedisi_volumetrik_enable']) ? '1' : '0');
             update_option('velocity_expedisi_volumetrik_divisor', sanitize_text_field($_POST['velocity_expedisi_volumetrik_divisor']));
+            
+            // New color settings
+            update_option('velocity_expedisi_primary_color', sanitize_hex_color($_POST['velocity_expedisi_primary_color']));
+            update_option('velocity_expedisi_secondary_color', sanitize_hex_color($_POST['velocity_expedisi_secondary_color']));
+            update_option('velocity_expedisi_header_text_color', sanitize_hex_color($_POST['velocity_expedisi_header_text_color']));
+            
             echo '<div class="notice notice-success is-dismissible"><p>Pengaturan disimpan.</p></div>';
         }
 
         $type = get_option('velocity_expedisi_type', 'nasional');
-        $pdf_size = get_option('velocity_expedisi_pdf_size', 'A4');
+        $pdf_size = get_option('velocity_expedisi_pdf_size', 'thermal');
         $volumetrik_enable = get_option('velocity_expedisi_volumetrik_enable', '0');
         $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000');
+        
+        // New color settings defaults
+        $primary_color = get_option('velocity_expedisi_primary_color', '#0d6efd');
+        $secondary_color = get_option('velocity_expedisi_secondary_color', '#6c757d');
+        $header_text_color = get_option('velocity_expedisi_header_text_color', '#ffffff');
+
+        $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'sistem';
         ?>
         <div class="wrap">
             <h1>Setting Expedisi</h1>
+            
+            <h2 class="nav-tab-wrapper">
+                <a href="?page=velocity-expedisi-tarif-settings&tab=sistem" class="nav-tab <?php echo $active_tab == 'sistem' ? 'nav-tab-active' : ''; ?>">Sistem</a>
+                <a href="?page=velocity-expedisi-tarif-settings&tab=style" class="nav-tab <?php echo $active_tab == 'style' ? 'nav-tab-active' : ''; ?>">Style</a>
+            </h2>
+
             <form method="post" action="">
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">Tipe Expedisi</th>
-                        <td>
-                            <select name="velocity_expedisi_type">
-                                <option value="nasional" <?php selected($type, 'nasional'); ?>>Nasional (Kota)</option>
-                                <option value="internasional" <?php selected($type, 'internasional'); ?>>Internasional (Negara)</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Ukuran Kertas PDF Resi</th>
-                        <td>
-                            <select name="velocity_expedisi_pdf_size">
-                                <option value="A4" <?php selected($pdf_size, 'A4'); ?>>A4 (Standard)</option>
-                                <option value="F4" <?php selected($pdf_size, 'F4'); ?>>F4 (Legal)</option>
-                                <option value="thermal" <?php selected($pdf_size, 'thermal'); ?>>Thermal (80mm)</option>
-                                <option value="thermal-58" <?php selected($pdf_size, 'thermal-58'); ?>>Thermal (58mm)</option>
-                            </select>
-                            <p class="description">Pilih ukuran kertas yang sesuai dengan printer Anda.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Perhitungan Volumetrik</th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="velocity_expedisi_volumetrik_enable" value="1" <?php checked($volumetrik_enable, '1'); ?>>
-                                Aktifkan perhitungan volumetrik di frontend
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Pembagi Volumetrik</th>
-                        <td>
-                            <input type="number" name="velocity_expedisi_volumetrik_divisor" value="<?php echo esc_attr($volumetrik_divisor); ?>" class="small-text">
-                            <p class="description">Default: 4000 atau 6000 (Panjang x Lebar x Tinggi / Pembagi).</p>
-                        </td>
-                    </tr>
-                </table>
+                <?php if ($active_tab == 'sistem') : ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">Tipe Expedisi</th>
+                            <td>
+                                <select name="velocity_expedisi_type">
+                                    <option value="nasional" <?php selected($type, 'nasional'); ?>>Nasional (Kota)</option>
+                                    <option value="internasional" <?php selected($type, 'internasional'); ?>>Internasional (Negara)</option>
+                                    <option value="nasional-internasional" <?php selected($type, 'nasional-internasional'); ?>>Nasional & Internasional</option>
+                                </select>
+                                <p class="description">Pilih tipe layanan ekspedisi yang ingin ditampilkan.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Ukuran Kertas PDF Resi</th>
+                            <td>
+                                <select name="velocity_expedisi_pdf_size">
+                                    <option value="A4" <?php selected($pdf_size, 'A4'); ?>>A4 (Standard)</option>
+                                    <option value="F4" <?php selected($pdf_size, 'F4'); ?>>F4 (Legal)</option>
+                                    <option value="thermal" <?php selected($pdf_size, 'thermal'); ?>>Thermal (80mm)</option>
+                                    <option value="thermal-58" <?php selected($pdf_size, 'thermal-58'); ?>>Thermal (58mm)</option>
+                                </select>
+                                <p class="description">Pilih ukuran kertas yang sesuai dengan printer Anda.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Perhitungan Volumetrik</th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="velocity_expedisi_volumetrik_enable" value="1" <?php checked($volumetrik_enable, '1'); ?>>
+                                    Aktifkan perhitungan volumetrik di frontend
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Pembagi Volumetrik</th>
+                            <td>
+                                <input type="number" name="velocity_expedisi_volumetrik_divisor" value="<?php echo esc_attr($volumetrik_divisor); ?>" class="small-text">
+                                <p class="description">Default: 4000 atau 6000 (Panjang x Lebar x Tinggi / Pembagi).</p>
+                            </td>
+                        </tr>
+                    </table>
+                <?php else : ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">Primary Color (Header Background)</th>
+                            <td>
+                                <input type="color" name="velocity_expedisi_primary_color" value="<?php echo esc_attr($primary_color); ?>">
+                                <p class="description">Warna utama untuk header dan tombol.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Secondary Color</th>
+                            <td>
+                                <input type="color" name="velocity_expedisi_secondary_color" value="<?php echo esc_attr($secondary_color); ?>">
+                                <p class="description">Warna sekunder untuk elemen pendukung.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Header Text Color</th>
+                            <td>
+                                <input type="color" name="velocity_expedisi_header_text_color" value="<?php echo esc_attr($header_text_color); ?>">
+                                <p class="description">Warna teks pada bagian header.</p>
+                            </td>
+                        </tr>
+                    </table>
+                <?php endif; ?>
+                
+                <input type="hidden" name="velocity_expedisi_type_hidden" value="<?php echo esc_attr($type); ?>">
+                <input type="hidden" name="velocity_expedisi_pdf_size_hidden" value="<?php echo esc_attr($pdf_size); ?>">
+                <input type="hidden" name="velocity_expedisi_volumetrik_enable_hidden" value="<?php echo esc_attr($volumetrik_enable); ?>">
+                <input type="hidden" name="velocity_expedisi_volumetrik_divisor_hidden" value="<?php echo esc_attr($volumetrik_divisor); ?>">
+                
+                <?php 
+                // We need to keep the other values when saving one tab
+                if ($active_tab == 'style') {
+                    ?>
+                    <input type="hidden" name="velocity_expedisi_type" value="<?php echo esc_attr($type); ?>">
+                    <input type="hidden" name="velocity_expedisi_pdf_size" value="<?php echo esc_attr($pdf_size); ?>">
+                    <input type="hidden" name="velocity_expedisi_volumetrik_divisor" value="<?php echo esc_attr($volumetrik_divisor); ?>">
+                    <?php if ($volumetrik_enable == '1') : ?>
+                        <input type="hidden" name="velocity_expedisi_volumetrik_enable" value="1">
+                    <?php endif; ?>
+                    <?php
+                } else {
+                    ?>
+                    <input type="hidden" name="velocity_expedisi_primary_color" value="<?php echo esc_attr($primary_color); ?>">
+                    <input type="hidden" name="velocity_expedisi_secondary_color" value="<?php echo esc_attr($secondary_color); ?>">
+                    <input type="hidden" name="velocity_expedisi_header_text_color" value="<?php echo esc_attr($header_text_color); ?>">
+                    <?php
+                }
+                ?>
+
                 <?php submit_button(); ?>
             </form>
         </div>

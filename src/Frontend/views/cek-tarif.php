@@ -6,20 +6,31 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
 <div x-data="cekTarif()" class="velocity-tarif-container mt-4" x-cloak>
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-header bg-primary text-white py-3 px-4">
-            <h5 class="mb-0 d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calculator me-2" viewBox="0 0 16 16">
-                    <path d="M12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4z"/>
-                    <path d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
-                </svg>
-                Cek Tarif Pengiriman (<?php echo ucfirst($type); ?>)
-            </h5>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calculator me-2" viewBox="0 0 16 16">
+                        <path d="M12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4z"/>
+                        <path d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-2zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+                    </svg>
+                    Cek Tarif Pengiriman <span x-show="type === 'nasional'">(Nasional)</span><span x-show="type === 'internasional'">(Internasional)</span>
+                </h5>
+                <?php if ($type === 'nasional-internasional') : ?>
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check" name="type_selector" id="type_nasional" value="nasional" x-model="type" @change="loadCities()">
+                    <label class="btn btn-outline-light" for="type_nasional">Nasional</label>
+
+                    <input type="radio" class="btn-check" name="type_selector" id="type_internasional" value="internasional" x-model="type" @change="loadCities()">
+                    <label class="btn btn-outline-light" for="type_internasional">Internasional</label>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="card-body p-4">
             <form @submit.prevent="submitCek">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label for="asal" class="form-label fw-bold">Asal</label>
-                        <input list="list_asal" x-model="formData.asal" id="asal" class="form-control" placeholder="Ketik Kota Asal..." required autocomplete="off">
+                        <label for="asal" class="form-label fw-bold" x-text="type === 'internasional' ? 'Negara Asal' : 'Kota Asal'">Asal</label>
+                        <input list="list_asal" x-model="formData.asal" id="asal" class="form-control" :placeholder="type === 'internasional' ? 'Ketik Negara Asal...' : 'Ketik Kota Asal...'" required autocomplete="off">
                         <datalist id="list_asal">
                             <template x-for="city in cities" :key="city">
                                 <option :value="city"></option>
@@ -27,8 +38,8 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
                         </datalist>
                     </div>
                     <div class="col-md-4">
-                        <label for="tujuan" class="form-label fw-bold">Tujuan</label>
-                        <input list="list_tujuan" x-model="formData.tujuan" id="tujuan" class="form-control" placeholder="Ketik Kota Tujuan..." required autocomplete="off">
+                        <label for="tujuan" class="form-label fw-bold" x-text="type === 'internasional' ? 'Negara Tujuan' : 'Kota Tujuan'">Tujuan</label>
+                        <input list="list_tujuan" x-model="formData.tujuan" id="tujuan" class="form-control" :placeholder="type === 'internasional' ? 'Ketik Negara Tujuan...' : 'Ketik Kota Tujuan...'" required autocomplete="off">
                         <datalist id="list_tujuan">
                             <template x-for="city in cities" :key="city">
                                 <option :value="city"></option>
@@ -121,8 +132,8 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
                                             </template>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <div class="fs-5 fw-bold text-success" x-text="formatRupiah(Math.max(finalWeight, row.min) * row.biaya)"></div>
-                                            <small class="text-muted" x-text="formatRupiah(row.biaya) + ' / kg'"></small>
+                                            <div class="fs-5 fw-bold text-success" x-text="formatRupiah(Math.max(finalWeight, row.min) * (volumetrikWeight > formData.berat ? (row.biaya_volumetrik || row.biaya) : row.biaya))"></div>
+                                            <small class="text-muted" x-text="formatRupiah(volumetrikWeight > formData.berat ? (row.biaya_volumetrik || row.biaya) : row.biaya) + ' / kg'"></small>
                                         </td>
                                     </tr>
                                 </template>
@@ -150,7 +161,7 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
 <script>
 function cekTarif() {
     return {
-        type: '<?php echo $type; ?>',
+        type: '<?php echo $type === 'nasional-internasional' ? 'nasional' : $type; ?>',
         volumetrikDivisor: <?php echo $volumetrik_divisor; ?>,
         cities: [],
         formData: {
@@ -186,6 +197,14 @@ function cekTarif() {
         },
 
         async loadCities() {
+            // Clear current selection when switching types if not the first load
+            if (this.cities.length > 0) {
+                this.formData.asal = '';
+                this.formData.tujuan = '';
+                this.results = [];
+                this.hasSearched = false;
+            }
+
             const storageKey = "data_expedisi_" + this.type;
             const jsonFile = this.type === 'internasional' ? 'countries.json' : 'city.json';
             let datacity = localStorage.getItem(storageKey);

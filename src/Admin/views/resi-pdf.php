@@ -1,7 +1,7 @@
 <?php 
 $site_name = get_bloginfo('name');
 $favicon_url = wp_get_attachment_image_url(get_option('site_icon'), 'full');
-$pdf_size = get_option('velocity_expedisi_pdf_size', 'A4');
+$pdf_size = get_option('velocity_expedisi_pdf_size', 'thermal');
 $is_thermal = strpos($pdf_size, 'thermal') !== false;
 ?>
 <!DOCTYPE html>

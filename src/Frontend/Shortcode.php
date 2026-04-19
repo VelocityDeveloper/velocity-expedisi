@@ -18,6 +18,56 @@ class Shortcode
         add_action('wp_ajax_nopriv_cek_resi', [$this, 'ajax_cek_resi']);
 
         add_action('init', [$this, 'handle_pdf_download']);
+        add_action('wp_head', [$this, 'render_custom_styles']);
+    }
+
+    public function render_custom_styles()
+    {
+        $primary_color = get_option('velocity_expedisi_primary_color', '#0d6efd');
+        $secondary_color = get_option('velocity_expedisi_secondary_color', '#6c757d');
+        $header_text_color = get_option('velocity_expedisi_header_text_color', '#ffffff');
+
+        echo "
+        <style>
+            :root {
+                --ve-primary-color: {$primary_color};
+                --ve-secondary-color: {$secondary_color};
+                --ve-header-text-color: {$header_text_color};
+            }
+            .velocity-tarif-container .card-header.bg-primary,
+            .velocity-tracking-container .card-header.bg-primary,
+            .velocity-tarif-container .card-header.bg-success,
+            .velocity-tracking-container .card-header.bg-success {
+                background-color: var(--ve-primary-color) !important;
+                color: var(--ve-header-text-color) !important;
+            }
+            .velocity-tarif-container .card-header.bg-success,
+            .velocity-tracking-container .card-header.bg-success {
+                background-color: var(--ve-secondary-color) !important;
+            }
+            .velocity-tarif-container .btn-primary,
+            .velocity-tracking-container .btn-primary {
+                background-color: var(--ve-primary-color) !important;
+                border-color: var(--ve-primary-color) !important;
+                color: var(--ve-header-text-color) !important;
+            }
+            .velocity-tarif-container .text-primary,
+            .velocity-tracking-container .text-primary {
+                color: var(--ve-primary-color) !important;
+            }
+            .velocity-tarif-container .text-success,
+            .velocity-tracking-container .text-success {
+                color: var(--ve-secondary-color) !important;
+            }
+            /* Specific for the header in the screenshot */
+            .velocity-tarif-container .card-header h5,
+            .velocity-tracking-container .card-header h5,
+            .velocity-tarif-container .card-header h6,
+            .velocity-tracking-container .card-header h6 {
+                color: var(--ve-header-text-color) !important;
+            }
+        </style>
+        ";
     }
 
     public function handle_pdf_download()
@@ -65,7 +115,7 @@ class Shortcode
         $dompdf->loadHtml($html);
 
         // Set paper size
-        $pdf_size = get_option('velocity_expedisi_pdf_size', 'A4');
+        $pdf_size = get_option('velocity_expedisi_pdf_size', 'thermal');
         $is_thermal = strpos($pdf_size, 'thermal') !== false;
 
         if ($is_thermal) {

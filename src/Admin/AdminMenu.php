@@ -463,6 +463,10 @@ class AdminMenu
             '3.x.x',
             true
         );
+
+        // Enqueue Select2
+        wp_enqueue_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', [], '4.1.0');
+        wp_enqueue_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['jquery'], '4.1.0', true);
     }
 
     public function render_main_menu()
@@ -636,6 +640,13 @@ class AdminMenu
 
         $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : '';
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        $message = isset($_GET['message']) ? sanitize_text_field($_GET['message']) : '';
+
+        if ($message === 'added') {
+            echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil ditambahkan.</p></div>';
+        } elseif ($message === 'deleted') {
+            echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil dihapus.</p></div>';
+        }
 
         // Handle Form Submission: Simpan/Edit Resi
         if (isset($_POST['save_resi']) && check_admin_referer('save_resi_action', 'resi_nonce')) {
@@ -661,8 +672,13 @@ class AdminMenu
             if ($_POST['action_type'] === 'add') {
                 $wpdb->insert($table_resi, $data);
                 $new_id = $wpdb->insert_id;
-                echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil ditambahkan.</p></div>';
-                wp_redirect(admin_url('admin.php?page=velocity-expedisi-resi&action=edit&id=' . $new_id . '&jenis=' . $data['jenis']));
+                $redirect_url = admin_url('admin.php?page=velocity-expedisi-resi&action=edit&id=' . $new_id . '&jenis=' . $data['jenis'] . '&message=added');
+                
+                if (!headers_sent()) {
+                    wp_redirect($redirect_url);
+                } else {
+                    echo '<script type="text/javascript">window.location.href="' . esc_url($redirect_url) . '";</script>';
+                }
                 exit;
             } else {
                 $wpdb->update($table_resi, $data, ['id' => $id]);
@@ -687,8 +703,13 @@ class AdminMenu
         if ($action === 'delete' && $id > 0 && check_admin_referer('delete_resi_' . $id)) {
             $wpdb->delete($table_resi, ['id' => $id]);
             $wpdb->delete($table_tracking, ['resi_id' => $id]);
-            echo '<div class="notice notice-success is-dismissible"><p>Resi berhasil dihapus.</p></div>';
-            wp_redirect(admin_url('admin.php?page=velocity-expedisi-resi&jenis=' . $type));
+            
+            $redirect_url = admin_url('admin.php?page=velocity-expedisi-resi&jenis=' . $type . '&message=deleted');
+            if (!headers_sent()) {
+                wp_redirect($redirect_url);
+            } else {
+                echo '<script type="text/javascript">window.location.href="' . esc_url($redirect_url) . '";</script>';
+            }
             exit;
         }
 

@@ -2,6 +2,10 @@
 
 namespace Expedisi\Admin;
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 class AdminMenu
 {
     public function register()
@@ -20,8 +24,26 @@ class AdminMenu
 
     public function ajax_tarif_export()
     {
+        // Force error reporting untuk melihat error asli jika ada
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_reporting(E_ALL);
+            ini_set('display_errors', 1);
+        }
+
         if (!current_user_can('manage_options')) {
             wp_die('Unauthorized');
+        }
+
+        // Pastikan Autoload dimuat ulang jika belum ada
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            $autoload = VELOCITY_EXPEDISI_DIR_PATH . 'vendor/autoload.php';
+            if (file_exists($autoload)) {
+                require_once $autoload;
+            }
+        }
+
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            wp_die('Error: Library PhpSpreadsheet tidak ditemukan di: ' . VELOCITY_EXPEDISI_DIR_PATH . 'vendor/autoload.php');
         }
 
         global $wpdb;
@@ -29,27 +51,71 @@ class AdminMenu
         $jenis = isset($_GET['jenis']) ? sanitize_text_field($_GET['jenis']) : 'nasional';
         $results = $wpdb->get_results($wpdb->prepare("SELECT asal, tujuan, biaya, biaya_volumetrik, `min` FROM $table_name WHERE jenis = %s", $jenis), ARRAY_A);
 
-        $filename = "tarif-" . $jenis . "-" . date('Y-m-d') . ".csv";
+        $filename = "tarif-" . $jenis . "-" . date('Y-m-d') . ".xlsx";
 
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=' . $filename);
-
-        $output = fopen('php://output', 'w');
-        fputcsv($output, ['asal', 'tujuan', 'biaya', 'biaya_volumetrik', 'min']);
-
-        if ($results) {
-            foreach ($results as $row) {
-                fputcsv($output, $row);
+        try {
+            // Bersihkan buffer secara total
+            while (ob_get_level()) {
+                ob_end_clean();
             }
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Set Header
+            $headers = ['asal', 'tujuan', 'biaya', 'biaya_volumetrik', 'min'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+
+            // Set Data
+            if ($results) {
+                $row_index = 2;
+                foreach ($results as $row) {
+                    $col = 'A';
+                    foreach ($row as $value) {
+                        $sheet->setCellValue($col . $row_index, $value);
+                        $col++;
+                    }
+                    $row_index++;
+                }
+            }
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            header('Pragma: public');
+
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            exit;
+        } catch (\Exception $e) {
+            wp_die('Gagal mengekspor data: ' . $e->getMessage());
         }
-        fclose($output);
-        exit;
     }
 
     public function ajax_resi_export()
     {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_reporting(E_ALL);
+            ini_set('display_errors', 1);
+        }
+
         if (!current_user_can('manage_options')) {
             wp_die('Unauthorized');
+        }
+
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            $autoload = VELOCITY_EXPEDISI_DIR_PATH . 'vendor/autoload.php';
+            if (file_exists($autoload)) {
+                require_once $autoload;
+            }
+        }
+
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            wp_die('Error: Library PhpSpreadsheet tidak ditemukan di: ' . VELOCITY_EXPEDISI_DIR_PATH . 'vendor/autoload.php');
         }
 
         global $wpdb;
@@ -57,27 +123,58 @@ class AdminMenu
         $jenis = isset($_GET['jenis']) ? sanitize_text_field($_GET['jenis']) : 'nasional';
         $results = $wpdb->get_results($wpdb->prepare("SELECT no_resi, nama_pengirim, hp_pengirim, kota_pengirim, negara_pengirim, nama_penerima, hp_penerima, kota_penerima, negara_penerima, nama_barang, jenis_barang, jumlah_barang, berat_barang, berat_volumetrik, jenis_packing FROM $table_name WHERE jenis = %s", $jenis), ARRAY_A);
 
-        $filename = "resi-" . $jenis . "-" . date('Y-m-d') . ".csv";
+        $filename = "resi-" . $jenis . "-" . date('Y-m-d') . ".xlsx";
 
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=' . $filename);
-
-        $output = fopen('php://output', 'w');
-        fputcsv($output, ['no_resi', 'nama_pengirim', 'hp_pengirim', 'kota_pengirim', 'negara_pengirim', 'nama_penerima', 'hp_penerima', 'kota_penerima', 'negara_penerima', 'nama_barang', 'jenis_barang', 'jumlah_barang', 'berat_barang', 'berat_volumetrik', 'jenis_packing']);
-
-        if ($results) {
-            foreach ($results as $row) {
-                fputcsv($output, $row);
+        try {
+            while (ob_get_level()) {
+                ob_end_clean();
             }
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Set Header
+            $headers = ['no_resi', 'nama_pengirim', 'hp_pengirim', 'kota_pengirim', 'negara_pengirim', 'nama_penerima', 'hp_penerima', 'kota_penerima', 'negara_penerima', 'nama_barang', 'jenis_barang', 'jumlah_barang', 'berat_barang', 'berat_volumetrik', 'jenis_packing'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+
+            // Set Data
+            if ($results) {
+                $row_index = 2;
+                foreach ($results as $row) {
+                    $col = 'A';
+                    foreach ($row as $value) {
+                        $sheet->setCellValue($col . $row_index, $value);
+                        $col++;
+                    }
+                    $row_index++;
+                }
+            }
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            header('Pragma: public');
+
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            exit;
+        } catch (\Exception $e) {
+            wp_die('Gagal mengekspor data: ' . $e->getMessage());
         }
-        fclose($output);
-        exit;
     }
 
     public function ajax_tarif_import()
     {
         if (!current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
+        }
+
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+            wp_send_json_error('Error: Library PhpSpreadsheet tidak ditemukan. Pastikan sudah menjalankan "composer install" di folder plugin.');
         }
 
         $file_id = isset($_POST['import_file_id']) ? intval($_POST['import_file_id']) : 0;
@@ -91,21 +188,25 @@ class AdminMenu
         $table_name = $wpdb->prefix . "tarif";
         $jenis = isset($_POST['jenis']) ? sanitize_text_field($_POST['jenis']) : 'nasional';
 
-        if (($handle = fopen($file, "r")) !== FALSE) {
-            // Pastikan baris pertama (header) selalu dilewati
-            fgetcsv($handle, 1000, ",");
+        try {
+            $spreadsheet = IOFactory::load($file);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            // Skip header
+            array_shift($rows);
 
             $count = 0;
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            foreach ($rows as $data) {
                 if (count($data) < 3) continue;
                 $this->process_tarif_row($table_name, $jenis, $data);
                 $count++;
             }
-            fclose($handle);
-            wp_send_json_success(['message' => "$count data tarif berhasil diimpor"]);
-        }
 
-        wp_send_json_error('Gagal membaca file');
+            wp_send_json_success(['message' => "$count data tarif berhasil diimpor"]);
+        } catch (\Exception $e) {
+            wp_send_json_error('Gagal membaca file: ' . $e->getMessage());
+        }
     }
 
     private function process_tarif_row($table_name, $jenis, $data)
@@ -145,6 +246,10 @@ class AdminMenu
             wp_send_json_error('Unauthorized');
         }
 
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+            wp_send_json_error('Error: Library PhpSpreadsheet tidak ditemukan. Pastikan sudah menjalankan "composer install" di folder plugin.');
+        }
+
         $file_id = isset($_POST['import_file_id']) ? intval($_POST['import_file_id']) : 0;
         $file = get_attached_file($file_id);
 
@@ -156,30 +261,29 @@ class AdminMenu
         $table_resi = $wpdb->prefix . "resi";
         $jenis = isset($_POST['jenis']) ? sanitize_text_field($_POST['jenis']) : 'nasional';
 
-        if (($handle = fopen($file, "r")) !== FALSE) {
-            // Skip header if needed, but the UI says without header. 
-            // Let's assume there's a header and skip it to be safe, or check first column.
-            $first_row = fgetcsv($handle, 1000, ",");
-            if ($first_row && $first_row[0] === 'no_resi') {
-                // It's a header, skip it
-            } else {
-                // Not a header, process it
-                if ($first_row) {
-                    $this->insert_resi_data($table_resi, $jenis, $first_row);
+        try {
+            $spreadsheet = IOFactory::load($file);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            $count = 0;
+            if (!empty($rows)) {
+                // Check if first row is header
+                if ($rows[0][0] === 'no_resi') {
+                    array_shift($rows);
+                }
+
+                foreach ($rows as $data) {
+                    if (count($data) < 2) continue;
+                    $this->insert_resi_data($table_resi, $jenis, $data);
+                    $count++;
                 }
             }
 
-            $count = ($first_row && $first_row[0] !== 'no_resi') ? 1 : 0;
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                if (count($data) < 2) continue;
-                $this->insert_resi_data($table_resi, $jenis, $data);
-                $count++;
-            }
-            fclose($handle);
             wp_send_json_success(['message' => "$count data resi berhasil diimpor"]);
+        } catch (\Exception $e) {
+            wp_send_json_error('Gagal membaca file: ' . $e->getMessage());
         }
-
-        wp_send_json_error('Gagal membaca file');
     }
 
     private function insert_resi_data($table_name, $jenis, $data)

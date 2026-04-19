@@ -47,14 +47,14 @@ $label_tujuan = $type == 'internasional' ? 'Negara Tujuan' : 'Kota Tujuan';
                 <form @submit.prevent="importData">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">Pilih File CSV</label>
+                            <label class="form-label">Pilih File Excel/CSV</label>
                             <div class="d-flex align-items-center">
                                 <input type="hidden" id="import_file_id" x-model="importFileId">
                                 <input type="text" class="form-control me-2" id="import_file_url" readonly placeholder="Pilih file dari media..." x-model="importFileUrl">
                                 <button type="button" class="btn btn-secondary btn-sm" @click="selectMedia">Pilih</button>
                             </div>
                             <div class="form-text mt-2">
-                                <p class="mb-1">Format file harus CSV dengan urutan kolom:</p>
+                                <p class="mb-1">Format file harus Excel (.xlsx) atau CSV dengan urutan kolom:</p>
                                 <code class="d-block bg-light p-2 rounded">asal, tujuan, biaya, biaya_volumetrik, min</code>
                                 <small class="text-muted">Pastikan baris pertama adalah header sesuai urutan di atas.</small>
                             </div>
@@ -185,10 +185,10 @@ function tarifManager() {
 
         selectMedia() {
             const frame = wp.media({
-                title: 'Pilih File CSV',
+                title: 'Pilih File Excel atau CSV',
                 button: { text: 'Pilih' },
                 multiple: false,
-                library: { type: 'text/csv' }
+                library: { type: ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'] }
             });
 
             frame.on('select', () => {

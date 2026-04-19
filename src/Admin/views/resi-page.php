@@ -29,14 +29,14 @@ if (!defined('ABSPATH')) {
                 <form id="formImportResi">
                     <div class="modal-body">
                         <div class="mb-3 text-dark">
-                            <label class="form-label">Pilih File CSV dari Media</label>
+                            <label class="form-label">Pilih File Excel/CSV dari Media</label>
                             <div class="d-flex align-items-center">
                                 <input type="hidden" id="import_resi_file_id" name="import_file_id">
                                 <input type="text" class="form-control me-2" id="import_resi_file_url" readonly placeholder="Pilih file dari media...">
                                 <button type="button" class="btn btn-secondary btn-sm" id="btnSelectMediaResi">Pilih</button>
                             </div>
                             <div class="form-text mt-2">
-                                <p class="mb-1">Format file harus CSV dengan urutan kolom (tanpa header):</p>
+                                <p class="mb-1">Format file harus Excel (.xlsx) atau CSV dengan urutan kolom (disarankan ada header):</p>
                                 <code class="d-block bg-light p-2 rounded">no_resi, nama_pengirim, hp_pengirim, kota_pengirim, negara_pengirim, nama_penerima, hp_penerima, kota_penerima, negara_penerima, nama_barang, jenis_barang, jumlah_barang, berat_barang, berat_volumetrik, jenis_packing</code>
                                 <small class="text-muted">Pastikan data sesuai dengan jenis yang dipilih (<?php echo $type; ?>).</small>
                             </div>
@@ -153,10 +153,10 @@ if (!defined('ABSPATH')) {
                 return;
             }
             mediaFrame = wp.media({
-                title: 'Pilih File CSV',
+                title: 'Pilih File Excel atau CSV',
                 button: { text: 'Pilih' },
                 multiple: false,
-                library: { type: 'text/csv' }
+                library: { type: ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'] }
             });
             mediaFrame.on('select', function() {
                 var attachment = mediaFrame.state().get('selection').first().toJSON();

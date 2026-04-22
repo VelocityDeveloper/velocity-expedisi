@@ -390,4 +390,43 @@ function cekTarif() {
         border-radius: 0.375rem;
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
+
+    @media (max-width: 767.98px) {
+        .velocity-tarif-container .table-responsive {
+            overflow-x: visible !important;
+        }
+
+        .velocity-tarif-container .table {
+            min-width: 100% !important;
+            margin-bottom: 0;
+        }
+
+        .velocity-tarif-container .table thead {
+            display: none;
+        }
+
+        .velocity-tarif-container .table,
+        .velocity-tarif-container .table tbody,
+        .velocity-tarif-container .table tr,
+        .velocity-tarif-container .table td {
+            display: block;
+            width: 100%;
+        }
+
+        .velocity-tarif-container .table tr {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            background: #fff;
+        }
+
+        .velocity-tarif-container .table td {
+            padding: 6px 0 !important;
+            text-align: left !important;
+            border: 0 !important;
+        }
+
+        .velocity-tarif-container .table td:last-child {
+            padding-bottom: 0 !important;
+        }
+    }
 </style>

@@ -76,6 +76,19 @@ class Shortcode
                 border-color: var(--ve-primary-color) !important;
                 color: var(--ve-header-text-color) !important;
             }
+            .velocity-tarif-container .btn-outline-primary,
+            .velocity-tracking-container .btn-outline-primary {
+                color: var(--ve-primary-color) !important;
+                border-color: var(--ve-primary-color) !important;
+            }
+            .velocity-tarif-container .btn-outline-primary:hover,
+            .velocity-tracking-container .btn-outline-primary:hover,
+            .velocity-tarif-container .btn-check:checked + .btn-outline-primary,
+            .velocity-tracking-container .btn-check:checked + .btn-outline-primary {
+                background-color: var(--ve-primary-color) !important;
+                border-color: var(--ve-primary-color) !important;
+                color: var(--ve-header-text-color) !important;
+            }
             .velocity-tarif-container .text-primary,
             .velocity-tracking-container .text-primary {
                 color: var(--ve-primary-color) !important;

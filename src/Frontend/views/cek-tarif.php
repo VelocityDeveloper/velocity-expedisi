@@ -1,6 +1,22 @@
 <?php if (!defined('ABSPATH')) exit; 
+
+// Fallback for variables from shortcode
+$type = isset($type) ? $type : get_option('velocity_expedisi_type', 'nasional');
+$asal = isset($asal) ? $asal : '';
+$tujuan = isset($tujuan) ? $tujuan : '';
+$berat = isset($berat) ? $berat : 0;
+
 $volumetrik_enable = get_option('velocity_expedisi_volumetrik_enable', '0');
 $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000');
+
+$layanan_darat = get_option('velocity_expedisi_layanan_darat', '0');
+$layanan_udara = get_option('velocity_expedisi_layanan_udara', '0');
+$layanan_laut = get_option('velocity_expedisi_layanan_laut', '0');
+$volumetrik_divisor_darat = get_option('velocity_expedisi_volumetrik_divisor_darat', '4000');
+$volumetrik_divisor_udara = get_option('velocity_expedisi_volumetrik_divisor_udara', '6000');
+$volumetrik_divisor_laut = get_option('velocity_expedisi_volumetrik_divisor_laut', '4000');
+
+$has_layanan = ($layanan_darat === '1' || $layanan_udara === '1' || $layanan_laut === '1');
 ?>
 
 <div x-data="cekTarif()" class="velocity-tarif-container mt-4" x-cloak>
@@ -27,6 +43,28 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
         </div>
         <div class="card-body p-3 p-sm-4">
             <form @submit.prevent="submitCek">
+                <?php if ($has_layanan) : ?>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-2">Pilih Layanan</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php if ($layanan_darat === '1') : ?>
+                                <input type="radio" class="btn-check" name="layanan" id="layanan_darat" value="darat" x-model="formData.layanan">
+                                <label class="btn btn-outline-primary px-3 rounded-pill" for="layanan_darat">Darat</label>
+                            <?php endif; ?>
+
+                            <?php if ($layanan_udara === '1') : ?>
+                                <input type="radio" class="btn-check" name="layanan" id="layanan_udara" value="udara" x-model="formData.layanan">
+                                <label class="btn btn-outline-primary px-3 rounded-pill" for="layanan_udara">Udara</label>
+                            <?php endif; ?>
+
+                            <?php if ($layanan_laut === '1') : ?>
+                                <input type="radio" class="btn-check" name="layanan" id="layanan_laut" value="laut" x-model="formData.layanan">
+                                <label class="btn btn-outline-primary px-3 rounded-pill" for="layanan_laut">Laut</label>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label for="asal" class="form-label fw-bold mb-1" x-text="type === 'internasional' ? 'Negara Asal' : 'Kota Asal'">Asal</label>
@@ -99,11 +137,12 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
     <div class="mt-4" x-show="hasSearched">
         <template x-if="results.length > 0">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-header bg-success text-white py-3 px-3">
+                <div class="card-header bg-success text-white py-3 px-3 text-center text-sm-start">
                     <h6 class="mb-0">Hasil Estimasi Tarif</h6>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <!-- Desktop Table -->
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-hover align-middle mb-0" style="min-width: 600px;">
                             <thead class="table-light">
                                 <tr>
@@ -117,7 +156,7 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
                                 <template x-for="row in results" :key="row.id">
                                     <tr>
                                         <td class="ps-3 ps-sm-4">
-                                            <div class="fw-bold text-primary" x-text="row.jenis.charAt(0).toUpperCase() + row.jenis.slice(1) + ' Service'"></div>
+                                            <div class="fw-bold text-primary" x-text="formData.layanan ? (formData.layanan.charAt(0).toUpperCase() + formData.layanan.slice(1) + ' Service') : (row.jenis.charAt(0).toUpperCase() + row.jenis.slice(1) + ' Service')"></div>
                                             <small class="text-muted">Min. Order: <span x-text="row.min"></span> kg</small>
                                         </td>
                                         <td>
@@ -142,6 +181,32 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none">
+                        <template x-for="row in results" :key="row.id">
+                            <div class="p-4 border-bottom text-center">
+                                <div class="fw-bold text-primary mb-1 fs-5" x-text="formData.layanan ? (formData.layanan.charAt(0).toUpperCase() + formData.layanan.slice(1) + ' Service') : (row.jenis.charAt(0).toUpperCase() + row.jenis.slice(1) + ' Service')"></div>
+                                <div class="text-muted small mb-3">Min. Order: <span x-text="row.min"></span> kg</div>
+                                
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                                    <span class="badge bg-light text-dark border px-2 py-1" x-text="row.asal"></span>
+                                    <span class="text-muted">→</span>
+                                    <span class="badge bg-light text-dark border px-2 py-1" x-text="row.tujuan"></span>
+                                </div>
+                                
+                                <div class="fw-bold fs-4 mb-3">
+                                    <span x-text="finalWeight"></span> kg
+                                    <template x-if="parseFloat(finalWeight) < parseFloat(row.min)">
+                                        <div class="text-danger small" style="font-size: 0.7rem;">(Min. <span x-text="row.min"></span> kg)</div>
+                                    </template>
+                                </div>
+                                
+                                <div class="fs-3 fw-bold text-success mb-1" x-text="formatRupiah(Math.max(finalWeight, row.min) * (volumetrikWeight > formData.berat ? (row.biaya_volumetrik || row.biaya) : row.biaya))"></div>
+                                <div class="text-muted small" x-text="formatRupiah(volumetrikWeight > formData.berat ? (row.biaya_volumetrik || row.biaya) : row.biaya) + ' / kg'"></div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </template>
@@ -163,11 +228,23 @@ $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000')
 <script>
 function cekTarif() {
     return {
-        type: '<?php echo $type === 'nasional-internasional' ? 'nasional' : $type; ?>',
-        volumetrikDivisor: <?php echo $volumetrik_divisor; ?>,
+        type: '<?php echo (isset($type) && $type === 'nasional-internasional') ? 'nasional' : (isset($type) ? $type : 'nasional'); ?>',
+        volumetrikDivisor: <?php echo (int)$volumetrik_divisor ?: 4000; ?>,
+        divisors: {
+            darat: <?php echo (int)$volumetrik_divisor_darat ?: 4000; ?>,
+            udara: <?php echo (int)$volumetrik_divisor_udara ?: 6000; ?>,
+            laut: <?php echo (int)$volumetrik_divisor_laut ?: 4000; ?>,
+            global: <?php echo (int)$volumetrik_divisor ?: 4000; ?>
+        },
         origins: [],
         destinations: [],
         formData: {
+            layanan: '<?php 
+                if ($layanan_darat === '1') echo "darat";
+                elseif ($layanan_udara === '1') echo "udara";
+                elseif ($layanan_laut === '1') echo "laut";
+                else echo "";
+            ?>',
             asal: '<?php echo esc_js($asal); ?>',
             tujuan: '<?php echo esc_js($tujuan); ?>',
             berat: '<?php echo esc_js($berat ?: 1); ?>',
@@ -180,9 +257,16 @@ function cekTarif() {
         isLoading: false,
         hasSearched: false,
 
+        get currentDivisor() {
+            if (this.formData.layanan && this.divisors[this.formData.layanan]) {
+                return this.divisors[this.formData.layanan];
+            }
+            return this.divisors.global;
+        },
+
         get volumetrikWeight() {
             if (!this.formData.useVolumetrik) return 0;
-            const vol = (parseFloat(this.formData.panjang || 0) * parseFloat(this.formData.lebar || 0) * parseFloat(this.formData.tinggi || 0)) / this.volumetrikDivisor;
+            const vol = (parseFloat(this.formData.panjang || 0) * parseFloat(this.formData.lebar || 0) * parseFloat(this.formData.tinggi || 0)) / this.currentDivisor;
             return vol || 0;
         },
 
@@ -198,15 +282,30 @@ function cekTarif() {
                 this.submitCek();
             }
 
-            // Initialize Select2
+            // Initialize Select2 after lists are loaded or immediately
             this.$nextTick(() => {
                 this.initSelect2();
             });
         },
 
         initSelect2() {
+            if (typeof jQuery === 'undefined' || !jQuery().select2) {
+                setTimeout(() => this.initSelect2(), 100);
+                return;
+            }
+
             const self = this;
-            jQuery('.select2-asal').select2({
+            const $asal = jQuery('.select2-asal');
+            const $tujuan = jQuery('.select2-tujuan');
+
+            if ($asal.hasClass('select2-hidden-accessible')) {
+                $asal.select2('destroy');
+            }
+            if ($tujuan.hasClass('select2-hidden-accessible')) {
+                $tujuan.select2('destroy');
+            }
+
+            $asal.select2({
                 placeholder: this.type === 'internasional' ? 'Pilih Negara Asal' : 'Pilih Kota Asal',
                 allowClear: true,
                 width: '100%'
@@ -215,7 +314,7 @@ function cekTarif() {
                 self.onAsalChange();
             });
 
-            jQuery('.select2-tujuan').select2({
+            $tujuan.select2({
                 placeholder: this.type === 'internasional' ? 'Pilih Negara Tujuan' : 'Pilih Kota Tujuan',
                 allowClear: true,
                 width: '100%'
@@ -227,17 +326,20 @@ function cekTarif() {
 
         async initLists() {
             this.isLoading = true;
-            await Promise.all([
-                this.loadOrigins(),
-                this.loadDestinations()
-            ]);
-            this.isLoading = false;
-            
-            // Refresh Select2 options
-            this.$nextTick(() => {
-                jQuery('.select2-asal, .select2-tujuan').select2('destroy');
-                this.initSelect2();
-            });
+            try {
+                await Promise.all([
+                    this.loadOrigins(),
+                    this.loadDestinations()
+                ]);
+            } catch (e) {
+                console.error('Error loading lists:', e);
+            } finally {
+                this.isLoading = false;
+                // Refresh Select2 options
+                this.$nextTick(() => {
+                    this.initSelect2();
+                });
+            }
         },
 
         async loadOrigins(destination = '') {
@@ -254,10 +356,6 @@ function cekTarif() {
                 const result = await response.json();
                 if (result.success) {
                     this.origins = result.data;
-                    this.$nextTick(() => {
-                        jQuery('.select2-asal').select2('destroy');
-                        this.initSelect2();
-                    });
                 }
             } catch (error) {
                 console.error('Failed to load origins:', error);
@@ -278,10 +376,6 @@ function cekTarif() {
                 const result = await response.json();
                 if (result.success) {
                     this.destinations = result.data;
-                    this.$nextTick(() => {
-                        jQuery('.select2-tujuan').select2('destroy');
-                        this.initSelect2();
-                    });
                 }
             } catch (error) {
                 console.error('Failed to load destinations:', error);

@@ -499,6 +499,14 @@ class AdminMenu
             update_option('velocity_expedisi_volumetrik_enable', isset($_POST['velocity_expedisi_volumetrik_enable']) ? '1' : '0');
             update_option('velocity_expedisi_volumetrik_divisor', sanitize_text_field($_POST['velocity_expedisi_volumetrik_divisor']));
             
+            // New service settings
+            update_option('velocity_expedisi_layanan_darat', isset($_POST['velocity_expedisi_layanan_darat']) ? '1' : '0');
+            update_option('velocity_expedisi_layanan_udara', isset($_POST['velocity_expedisi_layanan_udara']) ? '1' : '0');
+            update_option('velocity_expedisi_layanan_laut', isset($_POST['velocity_expedisi_layanan_laut']) ? '1' : '0');
+            update_option('velocity_expedisi_volumetrik_divisor_darat', sanitize_text_field($_POST['velocity_expedisi_volumetrik_divisor_darat']));
+            update_option('velocity_expedisi_volumetrik_divisor_udara', sanitize_text_field($_POST['velocity_expedisi_volumetrik_divisor_udara']));
+            update_option('velocity_expedisi_volumetrik_divisor_laut', sanitize_text_field($_POST['velocity_expedisi_volumetrik_divisor_laut']));
+
             // New color settings
             update_option('velocity_expedisi_primary_color', sanitize_hex_color($_POST['velocity_expedisi_primary_color']));
             update_option('velocity_expedisi_secondary_color', sanitize_hex_color($_POST['velocity_expedisi_secondary_color']));
@@ -512,6 +520,13 @@ class AdminMenu
         $volumetrik_enable = get_option('velocity_expedisi_volumetrik_enable', '0');
         $volumetrik_divisor = get_option('velocity_expedisi_volumetrik_divisor', '4000');
         
+        $layanan_darat = get_option('velocity_expedisi_layanan_darat', '0');
+        $layanan_udara = get_option('velocity_expedisi_layanan_udara', '0');
+        $layanan_laut = get_option('velocity_expedisi_layanan_laut', '0');
+        $volumetrik_divisor_darat = get_option('velocity_expedisi_volumetrik_divisor_darat', '4000');
+        $volumetrik_divisor_udara = get_option('velocity_expedisi_volumetrik_divisor_udara', '6000');
+        $volumetrik_divisor_laut = get_option('velocity_expedisi_volumetrik_divisor_laut', '4000');
+
         // New color settings defaults
         $primary_color = get_option('velocity_expedisi_primary_color', '#0d6efd');
         $secondary_color = get_option('velocity_expedisi_secondary_color', '#6c757d');
@@ -554,6 +569,24 @@ class AdminMenu
                             </td>
                         </tr>
                         <tr>
+                            <th scope="row">Layanan Tersedia</th>
+                            <td>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input type="checkbox" name="velocity_expedisi_layanan_darat" value="1" <?php checked($layanan_darat, '1'); ?>>
+                                    Layanan Darat
+                                </label>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input type="checkbox" name="velocity_expedisi_layanan_udara" value="1" <?php checked($layanan_udara, '1'); ?>>
+                                    Layanan Udara
+                                </label>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input type="checkbox" name="velocity_expedisi_layanan_laut" value="1" <?php checked($layanan_laut, '1'); ?>>
+                                    Layanan Laut
+                                </label>
+                                <p class="description">Pilih layanan yang ingin diaktifkan di frontend.</p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th scope="row">Perhitungan Volumetrik</th>
                             <td>
                                 <label>
@@ -562,11 +595,38 @@ class AdminMenu
                                 </label>
                             </td>
                         </tr>
+                        <?php if ($layanan_darat == '1') : ?>
                         <tr>
-                            <th scope="row">Pembagi Volumetrik</th>
+                            <th scope="row">Pembagi Volumetrik (Darat)</th>
+                            <td>
+                                <input type="number" name="velocity_expedisi_volumetrik_divisor_darat" value="<?php echo esc_attr($volumetrik_divisor_darat); ?>" class="small-text">
+                                <p class="description">Default: 4000 (Panjang x Lebar x Tinggi / Pembagi).</p>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if ($layanan_udara == '1') : ?>
+                        <tr>
+                            <th scope="row">Pembagi Volumetrik (Udara)</th>
+                            <td>
+                                <input type="number" name="velocity_expedisi_volumetrik_divisor_udara" value="<?php echo esc_attr($volumetrik_divisor_udara); ?>" class="small-text">
+                                <p class="description">Default: 6000 (Panjang x Lebar x Tinggi / Pembagi).</p>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if ($layanan_laut == '1') : ?>
+                        <tr>
+                            <th scope="row">Pembagi Volumetrik (Laut)</th>
+                            <td>
+                                <input type="number" name="velocity_expedisi_volumetrik_divisor_laut" value="<?php echo esc_attr($volumetrik_divisor_laut); ?>" class="small-text">
+                                <p class="description">Default: 4000 (Panjang x Lebar x Tinggi / Pembagi).</p>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                        <tr style="display:none;">
+                            <th scope="row">Pembagi Volumetrik (Global)</th>
                             <td>
                                 <input type="number" name="velocity_expedisi_volumetrik_divisor" value="<?php echo esc_attr($volumetrik_divisor); ?>" class="small-text">
-                                <p class="description">Default: 4000 atau 6000 (Panjang x Lebar x Tinggi / Pembagi).</p>
+                                <p class="description">Default: 4000 atau 6000.</p>
                             </td>
                         </tr>
                     </table>
@@ -608,8 +668,20 @@ class AdminMenu
                     <input type="hidden" name="velocity_expedisi_type" value="<?php echo esc_attr($type); ?>">
                     <input type="hidden" name="velocity_expedisi_pdf_size" value="<?php echo esc_attr($pdf_size); ?>">
                     <input type="hidden" name="velocity_expedisi_volumetrik_divisor" value="<?php echo esc_attr($volumetrik_divisor); ?>">
+                    <input type="hidden" name="velocity_expedisi_volumetrik_divisor_darat" value="<?php echo esc_attr($volumetrik_divisor_darat); ?>">
+                    <input type="hidden" name="velocity_expedisi_volumetrik_divisor_udara" value="<?php echo esc_attr($volumetrik_divisor_udara); ?>">
+                    <input type="hidden" name="velocity_expedisi_volumetrik_divisor_laut" value="<?php echo esc_attr($volumetrik_divisor_laut); ?>">
                     <?php if ($volumetrik_enable == '1') : ?>
                         <input type="hidden" name="velocity_expedisi_volumetrik_enable" value="1">
+                    <?php endif; ?>
+                    <?php if ($layanan_darat == '1') : ?>
+                        <input type="hidden" name="velocity_expedisi_layanan_darat" value="1">
+                    <?php endif; ?>
+                    <?php if ($layanan_udara == '1') : ?>
+                        <input type="hidden" name="velocity_expedisi_layanan_udara" value="1">
+                    <?php endif; ?>
+                    <?php if ($layanan_laut == '1') : ?>
+                        <input type="hidden" name="velocity_expedisi_layanan_laut" value="1">
                     <?php endif; ?>
                     <?php
                 } else {

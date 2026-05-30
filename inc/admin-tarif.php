@@ -127,34 +127,56 @@ $details = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
 
 <script>
     jQuery(function($){
-        function loadcity(){
-            jQuery.ajax({
-                url : '<?php echo VELOCITY_EXPEDISI_PLUGIN_URL; ?>/lib/city.json',
-                success:function(dataarray) {
-                    localStorage.setItem("data_city", JSON.stringify(dataarray));
-                },
-            });
+    function renderCity(dataarray){
+        var opt = '<option value="">Pilih Kota</option>';
+
+        if (!Array.isArray(dataarray)) {
+            console.log('Data city bukan array:', dataarray);
+            return;
         }
-        function optioncity(){
-            var datacity = localStorage.getItem("data_city");
-            if (datacity === null) {
-                loadcity();
-                datacity = JSON.parse(localStorage.getItem("data_city")); 
-            } else { 
-                datacity = JSON.parse(datacity); 
+
+        dataarray.forEach(function(item){
+            var ct = item.city_name;
+
+            if(item.type == 'Kota'){
+                ct += ' ' + item.type;
             }
 
-            var opt = '<option value="">Pilih Kota</option>';
-            datacity.forEach(item => {
-                var ct = item.city_name;
-                if(item.type=='Kota'){
-                    ct += ' '+item.type;
-                }
-                opt += '<option value="'+ct+'">'+ct+'</option>';
-            });
-            $('.selectcity').html(opt);
+            opt += '<option value="'+ct+'">'+ct+'</option>';
+        });
 
+        $('.selectcity').html(opt);
+    }
+
+    function loadcity(){
+        $.ajax({
+            url: '<?php echo VELOCITY_EXPEDISI_PLUGIN_URL; ?>/lib/city.json',
+            dataType: 'json',
+            success: function(dataarray) {
+                localStorage.setItem("data_city", JSON.stringify(dataarray));
+                renderCity(dataarray);
+            },
+            error: function(xhr) {
+                console.log('Gagal load city.json', xhr.status, xhr.responseText);
+            }
+        });
+    }
+
+    function optioncity(){
+        var datacity = localStorage.getItem("data_city");
+
+        if (datacity) {
+            try {
+                datacity = JSON.parse(datacity);
+                renderCity(datacity);
+            } catch(e) {
+                localStorage.removeItem("data_city");
+                loadcity();
+            }
+        } else {
+            loadcity();
         }
+    }
         optioncity();
         $(document).on('click','.btn-delete', function(){
             if (confirm("Hapus data ?") == true) {

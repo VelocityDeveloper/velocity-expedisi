@@ -126,13 +126,19 @@ if (!$resi_data) {
                                                 </select>
                                             </div>
                                             <div class="mb-0 location-input internasional-input" <?php echo $resi_data->jenis === 'nasional' ? 'style="display:none;"' : ''; ?>>
-                                                <label class="form-label small fw-bold">Negara Pengirim</label>
-                                                <select name="negara_pengirim" class="form-select select2-location">
-                                                    <option value="">Pilih Negara Asal</option>
-                                                    <?php foreach ($country_options as $option) : ?>
-                                                        <option value="<?php echo esc_attr($option); ?>" <?php selected($resi_data->negara_pengirim, $option); ?>><?php echo esc_html($option); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Negara Pengirim</label>
+                                                    <select name="negara_pengirim" class="form-select select2-location">
+                                                        <option value="">Pilih Negara Asal</option>
+                                                        <?php foreach ($country_options as $option) : ?>
+                                                            <option value="<?php echo esc_attr($option); ?>" <?php selected($resi_data->negara_pengirim, $option); ?>><?php echo esc_html($option); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-0">
+                                                    <label class="form-label small fw-bold">Kota Pengirim</label>
+                                                    <input type="text" name="kota_pengirim" class="form-control" value="<?php echo esc_attr($resi_data->kota_pengirim); ?>" placeholder="Ketik nama kota">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -162,13 +168,19 @@ if (!$resi_data) {
                                                 </select>
                                             </div>
                                             <div class="mb-0 location-input internasional-input" <?php echo $resi_data->jenis === 'nasional' ? 'style="display:none;"' : ''; ?>>
-                                                <label class="form-label small fw-bold">Negara Penerima</label>
-                                                <select name="negara_penerima" class="form-select select2-location">
-                                                    <option value="">Pilih Negara Tujuan</option>
-                                                    <?php foreach ($country_options as $option) : ?>
-                                                        <option value="<?php echo esc_attr($option); ?>" <?php selected($resi_data->negara_penerima, $option); ?>><?php echo esc_html($option); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Kota Penerima</label>
+                                                    <input type="text" name="kota_penerima" class="form-control" value="<?php echo esc_attr($resi_data->kota_penerima); ?>" placeholder="Ketik nama kota">
+                                                </div>
+                                                <div class="mb-0">
+                                                    <label class="form-label small fw-bold">Negara Penerima</label>
+                                                    <select name="negara_penerima" class="form-select select2-location">
+                                                        <option value="">Pilih Negara Tujuan</option>
+                                                        <?php foreach ($country_options as $option) : ?>
+                                                            <option value="<?php echo esc_attr($option); ?>" <?php selected($resi_data->negara_penerima, $option); ?>><?php echo esc_html($option); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

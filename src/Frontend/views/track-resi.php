@@ -31,12 +31,20 @@
                         <div class="col-sm-6 mb-3">
                             <h6 class="text-muted border-bottom pb-2">Informasi Pengirim</h6>
                             <p class="mb-1"><strong>Nama:</strong> <span x-text="resi.nama_pengirim"></span></p>
-                            <p class="mb-1"><strong>Kota:</strong> <span x-text="resi.kota_pengirim || '-'"></span></p>
+                            <p class="mb-1"><strong>Lokasi:</strong> 
+                                <span x-text="resi.jenis === 'internasional' ? 
+                                    (resi.kota_pengirim ? resi.kota_pengirim : '-') + (resi.negara_pengirim ? ', ' + resi.negara_pengirim : '') : 
+                                    (resi.kota_pengirim || '-')"></span>
+                            </p>
                         </div>
                         <div class="col-sm-6 mb-3">
                             <h6 class="text-muted border-bottom pb-2">Informasi Penerima</h6>
                             <p class="mb-1"><strong>Nama:</strong> <span x-text="resi.nama_penerima"></span></p>
-                            <p class="mb-1"><strong>Kota:</strong> <span x-text="resi.kota_penerima || '-'"></span></p>
+                            <p class="mb-1"><strong>Lokasi:</strong> 
+                                <span x-text="resi.jenis === 'internasional' ? 
+                                    (resi.kota_penerima ? resi.kota_penerima : '-') + (resi.negara_penerima ? ', ' + resi.negara_penerima : '') : 
+                                    (resi.kota_penerima || '-')"></span>
+                            </p>
                         </div>
                     </div>
 

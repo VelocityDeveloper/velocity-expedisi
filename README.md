@@ -23,15 +23,15 @@ Plugin ini menyediakan dua shortcode utama untuk digunakan pada halaman atau pos
 ### 1. Cek Tarif (Ongkos Kirim)
 Menampilkan form pencarian tarif berdasarkan asal, tujuan, dan berat barang.
 ```text
-[cek_tarif]
+[cek-tarif]
 ```
 *Parameter Opsional:*
-- `type`: Menentukan tipe tarif yang ditampilkan secara default (`nasional` atau `internasional`). Contoh: `[cek_tarif type="internasional"]`.
+- `type`: Menentukan tipe tarif yang ditampilkan secara default (`nasional` atau `internasional`). Contoh: `[cek-tarif type="internasional"]`.
 
 ### 2. Cek Resi (Pelacakan)
 Menampilkan form pelacakan resi beserta timeline status perjalanannya.
 ```text
-[cek_resi]
+[cek-resi]
 ```
 
 ## Struktur Plugin

@@ -362,18 +362,34 @@ if (!$resi_data) {
         });
     });
 
+    function setLocationGroupState(elements, isVisible) {
+        elements.forEach(el => {
+            el.style.display = isVisible ? 'block' : 'none';
+            el.querySelectorAll('input, select, textarea').forEach(field => {
+                field.disabled = !isVisible;
+            });
+        });
+    }
+
     function toggleLocationInputs(val) {
         const nasionalInputs = document.querySelectorAll('.nasional-input');
         const internasionalInputs = document.querySelectorAll('.internasional-input');
 
         if (val === 'nasional') {
-            nasionalInputs.forEach(el => el.style.display = 'block');
-            internasionalInputs.forEach(el => el.style.display = 'none');
+            setLocationGroupState(nasionalInputs, true);
+            setLocationGroupState(internasionalInputs, false);
         } else {
-            nasionalInputs.forEach(el => el.style.display = 'none');
-            internasionalInputs.forEach(el => el.style.display = 'block');
+            setLocationGroupState(nasionalInputs, false);
+            setLocationGroupState(internasionalInputs, true);
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const jenisSelect = document.querySelector('select[name="jenis"]');
+        if (jenisSelect) {
+            toggleLocationInputs(jenisSelect.value);
+        }
+    });
 
     function toggleKurirInput(val) {
         const kurirInput = document.getElementById('kurirInput');
